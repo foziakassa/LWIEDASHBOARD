@@ -23,38 +23,35 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    try {
-      const data = await poster('api/adminlogin', { Email, Password });
 
-      // Check if response data is undefined or does not contain necessary properties
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(Email)) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return; // Prevent further execution
+    }
+
+    // Validate password length
+    if (Password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setIsLoading(false);
+      return; // Prevent further execution
+    }
+
+    try {
+      const data = await poster('/api/adminlogin', { Email, Password });
+
+      // Check if response data contains necessary properties
       if (!data || !data.Role || !data.authToken) {
-          throw new Error("Login failed. Please check your credentials.");
+        throw new Error("Login failed. Please check your credentials.");
       }
 
       const { Role, authToken } = data;
-
-      // Continue with cookie setting and role-based redirection...
- 
-
- 
-   
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(Email)) {
-        throw new Error("Please enter a valid email address");
-      }
-
-      // Validate password length
-      if (Password.length < 6) {
-        throw new Error("Password must be at least 6 characters");
-      }
 
       // Set authentication cookies
       const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
@@ -66,7 +63,6 @@ export default function LoginPage() {
         router.push("/admin");
       } else if (Role === "manager") {
         router.push("/manager");
-        //
       } else {
         throw new Error("Unauthorized role");
       }
