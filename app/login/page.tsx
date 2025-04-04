@@ -1,5 +1,8 @@
 "use client"
 
+import useSWR, { mutate } from "swr";
+import poster from "@/shared/post";
+
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -14,62 +17,58 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [Email, setEmail] = useState("")
+  const [Password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
+ 
     try {
+      const data = await poster('api/adminlogin', { Email, Password });
+
+      // Assuming the API returns the user data including role
+      const { Role, authToken } = data; // Retrieve role and token from response
+
       // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
-        throw new Error("Please enter a valid email address")
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(Email)) {
+        throw new Error("Please enter a valid email address");
       }
 
       // Validate password length
-      if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters")
+      if (Password.length < 6) {
+        throw new Error("Password must be at least 6 characters");
       }
 
-      // In a real app, this would be an API call to authenticate
-      // For demo purposes, we'll simulate authentication
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Demo authentication logic
-      let userRole: string | null = null
-
-      // Demo credentials for testing
-      if (email === "admin@lwie.com" && password === "admin123") {
-        userRole = "admin"
-      } else if (email === "manager@lwie.com" && password === "manager123") {
-        userRole = "manager"
-      } else {
-        throw new Error("Invalid email or password")
-      }
-
-      // Set authentication cookie
-      const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 1 day
-      document.cookie = `userRole=${userRole}; path=/; max-age=${cookieMaxAge}`
-      document.cookie = `authToken=demo-jwt-token; path=/; max-age=${cookieMaxAge}`
+      // Set authentication cookies
+      const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
+      document.cookie = `userRole=${Role}; path=/; max-age=${cookieMaxAge}`;
+      document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
 
       // Redirect based on role
-      if (userRole === "admin") {
-        router.push("/admin")
-      } else if (userRole === "manager") {
-        router.push("/manager")
+      if (Role === "admin") {
+        router.push("/admin");
+      } else if (Role === "manager") {
+        router.push("/manager");
+      } else {
+        throw new Error("Unauthorized role");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#e5eded] dark:bg-gray-900 p-4">
@@ -105,7 +104,7 @@ export default function LoginPage() {
                     type="email"
                     placeholder="name@example.com"
                     className="pl-10"
-                    value={email}
+                    value={Email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
@@ -126,7 +125,7 @@ export default function LoginPage() {
                     id="password"
                     type="password"
                     className="pl-10"
-                    value={password}
+                    value={Password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />

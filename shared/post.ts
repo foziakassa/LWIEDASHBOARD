@@ -1,6 +1,13 @@
-// import axiosInstance from "@/shared/utils/axios_instance";
 import axiosInstance from "./axiosinstance";
 
-const poster = (url: string, data: object) => axiosInstance.post(url, data).then((res) => res.data);
-
-export default poster;
+const poster = async (url: string, data: object) => {
+    try {
+      const response = await axiosInstance.post(url, data);
+      return response.data;
+    } catch (error) {
+      // Log error for debugging
+      console.error("Error in poster function:", error);
+    //   throw error.response ? error.response.data : new Error("An unexpected error occurred");
+    }
+  };
+  export default poster;

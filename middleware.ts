@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   const userRole = cookies.get("userRole")?.value
 
   // Redirect root to admin dashboard by default if authenticated
-  if (pathname === "/") {
+  if (pathname === "/login") {
     if (!authToken) {
       return NextResponse.redirect(new URL("/login", request.url))
     }
