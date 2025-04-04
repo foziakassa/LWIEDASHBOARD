@@ -59,6 +59,7 @@ export default function LoginPage() {
         router.push("/admin");
       } else if (Role === "manager") {
         router.push("/manager");
+        //
       } else {
         throw new Error("Unauthorized role");
       }
