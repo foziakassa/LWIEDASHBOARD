@@ -30,14 +30,21 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-
- 
     try {
       const data = await poster('api/adminlogin', { Email, Password });
 
-      // Assuming the API returns the user data including role
-      const { Role, authToken } = data; // Retrieve role and token from response
+      // Check if response data is undefined or does not contain necessary properties
+      if (!data || !data.Role || !data.authToken) {
+          throw new Error("Login failed. Please check your credentials.");
+      }
 
+      const { Role, authToken } = data;
+
+      // Continue with cookie setting and role-based redirection...
+ 
+
+ 
+   
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(Email)) {
