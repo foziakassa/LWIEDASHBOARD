@@ -44,7 +44,7 @@ export default function LoginPage() {
     }
 
     try {
-      const data = await poster('/api/adminlogin', { Email, Password });
+      const data = await poster('api/adminlogin', { Email, Password });
 
       // Check if response data contains necessary properties
       if (!data || !data.Role || !data.authToken) {
