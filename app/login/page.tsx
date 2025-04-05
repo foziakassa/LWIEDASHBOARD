@@ -106,7 +106,7 @@
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Demo: admin@lwie.com or manager@lwie.com</p>
+              {/* <p className="text-xs text-muted-foreground">Demo: admin@lwie.com or manager@lwie.com</p> */}
               </div>
 
               <div className="space-y-2">
@@ -127,7 +127,7 @@
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Demo: admin123 or manager123</p>
+                {/* <p className="text-xs text-muted-foreground">Demo: admin123 or manager123</p> */}
               </div>
 
               <div className="flex items-center space-x-2">
