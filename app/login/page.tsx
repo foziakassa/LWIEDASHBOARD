@@ -1,73 +1,69 @@
 "use client"
+ 
+ import useSWR, { mutate } from "swr";
+ import poster from "@/shared/post";
+ 
+ import type React from "react"
+ import { useState } from "react"
+ import { useRouter } from "next/navigation"
+ import Link from "next/link"
+ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+ import { Button } from "@/components/ui/button"
+ import { Input } from "@/components/ui/input"
+ import { Label } from "@/components/ui/label"
+ import { Checkbox } from "@/components/ui/checkbox"
+ import { AlertCircle, Lock, Mail } from "lucide-react"
+ import { Alert, AlertDescription } from "@/components/ui/alert"
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle, Lock, Mail } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-
-export default function LoginPage() {
+ export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [Email, setEmail] = useState("")
+  const [Password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+  
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(Email)) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return; // Prevent further execution
+    }
+  
+    // Validate password length
+    if (Password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setIsLoading(false);
+      return; // Prevent further execution
+    }
+  
     try {
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
-        throw new Error("Please enter a valid email address")
-      }
-
-      // Validate password length
-      if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters")
-      }
-
-      // In a real app, this would be an API call to authenticate
-      // For demo purposes, we'll simulate authentication
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Demo authentication logic
-      let userRole: string | null = null
-
-      // Demo credentials for testing
-      if (email === "admin@lwie.com" && password === "admin123") {
-        userRole = "admin"
-      } else if (email === "manager@lwie.com" && password === "manager123") {
-        userRole = "manager"
-      } else {
-        throw new Error("Invalid email or password")
-      }
-
-      // Set authentication cookie
-      const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 1 day
-      document.cookie = `userRole=${userRole}; path=/; max-age=${cookieMaxAge}`
-      document.cookie = `authToken=demo-jwt-token; path=/; max-age=${cookieMaxAge}`
-
+      const data = await poster('api/adminlogin', { Email, Password });
+      const { Role, authToken } = data;
+  
+      // Set authentication cookies
+      const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
+      document.cookie = `userRole=${Role}; path=/; max-age=${cookieMaxAge}`;
+      document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
+  
       // Redirect based on role
-      if (userRole === "admin") {
-        router.push("/admin")
-      } else if (userRole === "manager") {
-        router.push("/manager")
+      if (Role === "admin") {
+        router.push("/admin");
+      } else if (Role === "manager") {
+        router.push("/manager");
+      } else {
+        throw new Error("Unauthorized role");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -105,7 +101,7 @@ export default function LoginPage() {
                     type="email"
                     placeholder="name@example.com"
                     className="pl-10"
-                    value={email}
+                    value={Email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
@@ -126,7 +122,7 @@ export default function LoginPage() {
                     id="password"
                     type="password"
                     className="pl-10"
-                    value={password}
+                    value={Password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
