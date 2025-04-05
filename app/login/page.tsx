@@ -52,7 +52,7 @@
       document.cookie = `userRole=${Role}; path=/; max-age=${cookieMaxAge}`;
       // document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
   
-      // Redirect based on role
+      // Redirect based on role mm
       if (Role === "admin") {
         router.push("/admin");
       } else if (Role === "manager") {
