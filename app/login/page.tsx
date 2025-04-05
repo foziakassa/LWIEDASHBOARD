@@ -50,7 +50,7 @@
       // Set authentication cookies ll
       const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
       document.cookie = `userRole=${Role}; path=/; max-age=${cookieMaxAge}`;
-      document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
+      // document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
   
       // Redirect based on role
       if (Role === "admin") {
