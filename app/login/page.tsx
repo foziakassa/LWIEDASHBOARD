@@ -46,11 +46,12 @@
     try {
       const data = await poster('api/adminlogin', { Email, Password });
       const { Role, authToken } = data;
+      console.log("User data:", data);
   
       // Set authentication cookies ll
       const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
       document.cookie = `userRole=${Role}; path=/; max-age=${cookieMaxAge}`;
-      // document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
+      document.cookie = `authToken=${authToken}; path=/; max-age=${cookieMaxAge}`;
   
       // Redirect based on role mm
       if (Role === "admin") {
