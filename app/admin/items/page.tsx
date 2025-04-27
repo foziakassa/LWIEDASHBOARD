@@ -1,323 +1,208 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DataTable } from "@/components/data-table"
-import { Badge } from "@/components/ui/badge"
-import { RefreshCw, Plus, ChevronRight, Pencil, Trash2, CheckCircle, XCircle, Filter } from "lucide-react"
-import { DynamicItemForm } from "@/components/forms/dynamic-item-form"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { FieldAdder } from "@/components/field-adder"
-import { Separator } from "@/components/ui/separator"
+import { useState, useEffect, SetStateAction } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw, Plus, ChevronRight, Pencil, Trash2, CheckCircle, XCircle, Filter } from "lucide-react";
+import { DynamicItemForm } from "@/components/forms/dynamic-item-form";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FieldAdder } from "@/components/field-adder";
+import { Separator } from "@/components/ui/separator";
+import axiosInstance from "@/shared/axiosinstance";
+
+interface Item {
+  id: string;
+  userId: string;
+  title: string;
+  categoryId: number;
+  description: string;
+  condition: string;
+  location: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  tradeType?: string | null;
+  acceptCash: boolean;
+  categoryName: string;
+  images: { id: number; url: string; isMain: boolean }[];
+}
+
+interface ItemData {
+  title: string;
+  categoryId: number;
+  description: string;
+  condition: string;
+  location: string;
+  price: number;
+}
 
 export default function ItemsPage() {
-  const [mounted, setMounted] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
-  const [items, setItems] = useState([])
-  const [categories, setCategories] = useState([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filteredItems, setFilteredItems] = useState([])
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [customFields, setCustomFields] = useState([])
+  const [mounted, setMounted] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string; icon: string }[]>([]);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
-    setMounted(true)
+    setMounted(true);
+    
+    // Fetch items from the API
+    const fetchItems = async () => {
+      try {
+        const response = await axiosInstance.get('/api/items');
+        ////....
+        if (response.data.success) {
+          const data: Item[] = response.data.items.map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            title: item.title,
+            categoryId: item.category_id,
+            description: item.description,
+            condition: item.condition,
+            location: item.location,
+            status: item.status,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+            tradeType: item.trade_type,
+            acceptCash: item.accept_cash,
+            categoryName: item.category_name,
+            images: item.images.map((image: any) => ({
+              id: image.id,
+              url: image.url,
+              isMain: image.is_main,
+            })),
+          }));
 
-    // Simulate API call for categories
-    const fetchCategories = () => {
-      const mockCategories = [
-        {
-          id: "vehicles",
-          name: "Vehicles",
-          description: "Cars, Motorcycles, Bicycles, Boats, Spare Parts, Accessories",
-          icon: "🚗",
-          fields: [
-            { name: "make", label: "Make & Model", type: "text", required: true },
-            { name: "year", label: "Year of Manufacture", type: "number", required: true },
-            { name: "mileage", label: "Mileage", type: "number", required: true },
-            {
-              name: "fuelType",
-              label: "Fuel Type",
-              type: "select",
-              required: true,
-              options: ["Petrol", "Diesel", "Hybrid", "Electric"],
-            },
-            {
-              name: "transmission",
-              label: "Transmission Type",
-              type: "select",
-              required: true,
-              options: ["Manual", "Automatic"],
-            },
-            {
-              name: "condition",
-              label: "Condition",
-              type: "select",
-              required: true,
-              options: ["New", "Used", "Accident-Free", "Salvaged"],
-            },
-          ],
-        },
-        {
-          id: "electronics",
-          name: "Electronics",
-          description: "Laptops, Desktops, TVs, Cameras, Gaming Consoles, Audio Devices",
-          icon: "💻",
-          fields: [
-            {
-              name: "type",
-              label: "Device Type",
-              type: "select",
-              required: true,
-              options: ["Laptop", "Desktop", "TV", "Camera", "Gaming Console", "Audio Device", "Other"],
-            },
-            { name: "brand", label: "Brand & Model", type: "text", required: true },
-            { name: "processor", label: "Processor & RAM", type: "text", required: false },
-            { name: "storage", label: "Storage Type & Capacity", type: "text", required: false },
-            { name: "screenSize", label: "Screen Size (inches)", type: "number", required: false },
-          ],
-        },
-        {
-          id: "mobile",
-          name: "Mobile Phones & Tablets",
-          description: "Smartphones, Feature Phones, Tablets, Accessories",
-          icon: "📱",
-          fields: [
-            { name: "brand", label: "Brand & Model", type: "text", required: true },
-            {
-              name: "os",
-              label: "Operating System",
-              type: "select",
-              required: true,
-              options: ["iOS", "Android", "Windows", "Other"],
-            },
-            { name: "storage", label: "Storage Capacity (GB)", type: "number", required: true },
-            { name: "ram", label: "RAM (GB)", type: "number", required: true },
-          ],
-        },
-        {
-          id: "furniture",
-          name: "Home, Furniture & Appliances",
-          description: "Kitchen, Living Room, Bedroom, Office Furniture, Home Appliances",
-          icon: "🛋️",
-          fields: [
-            { name: "type", label: "Item Type", type: "text", required: true },
-            { name: "material", label: "Material", type: "text", required: false },
-            { name: "dimensions", label: "Dimensions", type: "text", required: false },
-          ],
-        },
-      ]
-      setCategories(mockCategories)
-    }
+          setItems(data);
+          setFilteredItems(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch items:", error);
+      }
+    };
 
-    // Simulate API call for items
-    const fetchItems = () => {
-      const mockItems = [
-        {
-          id: "1",
-          name: "Toyota Camry 2020",
-          description: "Excellent condition Toyota Camry with low mileage",
-          category: "vehicles",
-          categoryName: "Vehicles",
-          categoryIcon: "🚗",
-          make: "Toyota Camry",
-          year: "2020",
-          mileage: "25000",
-          fuelType: "Petrol",
-          transmission: "Automatic",
-          condition: "Used",
-          location: "New York, NY",
-          price: "15000",
-          images: ["/placeholder.svg?height=300&width=400"],
-          swapConditions: "Looking for a smaller car or electronics of similar value",
-          status: "Pending",
-          date: "2024-01-14",
-        },
-        {
-          id: "2",
-          name: "MacBook Pro 2023",
-          description: "Mint condition MacBook Pro with M2 chip",
-          category: "electronics",
-          categoryName: "Electronics",
-          categoryIcon: "💻",
-          type: "Laptop",
-          brand: "Apple MacBook Pro",
-          processor: "M2 Pro, 16GB RAM",
-          storage: "512GB SSD",
-          screenSize: "14",
-          condition: "Like New",
-          location: "San Francisco, CA",
-          price: "1800",
-          images: ["/placeholder.svg?height=300&width=400"],
-          swapConditions: "Looking for a gaming laptop or high-end camera",
-          status: "Approved",
-          date: "2024-01-13",
-        },
-        {
-          id: "3",
-          name: "Vintage Bicycle",
-          description: "Classic road bike from the 80s in great condition",
-          category: "vehicles",
-          categoryName: "Vehicles",
-          categoryIcon: "🚗",
-          make: "Schwinn",
-          year: "1985",
-          mileage: "Unknown",
-          condition: "Good",
-          location: "Portland, OR",
-          price: "350",
-          images: ["/placeholder.svg?height=300&width=400"],
-          swapConditions: "Looking for musical instruments or audio equipment",
-          status: "Rejected",
-          date: "2024-01-12",
-        },
-        {
-          id: "4",
-          name: "iPhone 14 Pro",
-          description: "iPhone 14 Pro with 256GB storage, barely used",
-          category: "mobile",
-          categoryName: "Mobile Phones & Tablets",
-          categoryIcon: "📱",
-          brand: "Apple iPhone 14 Pro",
-          os: "iOS",
-          storage: "256",
-          ram: "6",
-          condition: "Like New",
-          location: "Chicago, IL",
-          price: "900",
-          images: ["/placeholder.svg?height=300&width=400"],
-          swapConditions: "Looking for Android flagship phone or laptop",
-          status: "Approved",
-          date: "2024-01-11",
-        },
-        {
-          id: "5",
-          name: "Leather Sofa",
-          description: "Genuine leather sofa in excellent condition",
-          category: "furniture",
-          categoryName: "Home, Furniture & Appliances",
-          categoryIcon: "🛋️",
-          type: "Sofa",
-          material: "Genuine Leather",
-          dimensions: '84" x 36" x 32"',
-          condition: "Good",
-          location: "Austin, TX",
-          price: "800",
-          images: ["/placeholder.svg?height=300&width=400"],
-          swapConditions: "Looking for dining table set or bedroom furniture",
-          status: "Pending",
-          date: "2024-01-10",
-        },
-      ]
-      setItems(mockItems)
-      setFilteredItems(mockItems)
-    }
+    // Fetch categories (add your API call here)
+    const fetchCategories = async () => {
+      // Assume categories are fetched from an API
+      try {
+        const response = await axiosInstance.get('/categories');
+        setCategories(response.data.categories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
 
-    fetchCategories()
-    fetchItems()
-  }, [])
+    fetchItems();
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     // Filter items based on search query, status filter, and category filter
-    let filtered = items
+    let filtered = items;
 
+    // Search filtering
     if (searchQuery) {
       filtered = filtered.filter((item) =>
         Object.values(item).some(
-          (value) => typeof value === "string" && value.toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-      )
+          (value) =>
+            typeof value === "string" &&
+            value.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
     }
 
+    // Status filtering
     if (statusFilter !== "all") {
-      filtered = filtered.filter((item) => item.status === statusFilter)
+      filtered = filtered.filter((item) => item.status === statusFilter);
     }
 
+    // Category filtering
     if (categoryFilter !== "all") {
-      filtered = filtered.filter((item) => item.category === categoryFilter)
+      filtered = filtered.filter((item) => item.categoryName === categoryFilter);
     }
 
-    setFilteredItems(filtered)
-  }, [searchQuery, statusFilter, categoryFilter, items])
+    setFilteredItems(filtered);
+  }, [searchQuery, statusFilter, categoryFilter, items]);
 
   if (!mounted) {
-    return null
+    return null;
   }
 
-  const handleEditItem = (item) => {
-    setEditingItem(item)
-    setShowForm(true)
-  }
+  const handleEditItem = (item: Item) => {
+    setEditingItem(item);
+    setShowForm(true);
+  };
 
   const handleNewItem = () => {
-    setEditingItem(null)
-    setShowForm(true)
-  }
+    setEditingItem(null);
+    setShowForm(true);
+  };
 
-  const handleSaveItem = (itemData) => {
+  const handleSaveItem = (itemData: ItemData) => {
     if (editingItem) {
       // Update existing item
       setItems((prev) =>
         prev.map((item) =>
           item.id === editingItem.id
             ? {
+                ...item,
                 ...itemData,
-                id: editingItem.id,
-                date: editingItem.date,
-                categoryName: categories.find((c) => c.id === itemData.category)?.name || "",
-                categoryIcon: categories.find((c) => c.id === itemData.category)?.icon || "📦",
+                categoryName: categories.find((c) => String(c.id) === String(itemData.categoryId))?.name || "",
+                categoryIcon: categories.find((c) => String(c.id) === String(itemData.categoryId))?.icon || "📦",
               }
-            : item,
-        ),
-      )
+            : item
+        )
+      );
     } else {
       // Add new item
-      const newItem = {
+      const newItem: Item = {
         ...itemData,
-        id: String(items.length + 1),
-        date: new Date().toISOString().split("T")[0],
-        status: "Pending",
-        categoryName: categories.find((c) => c.id === itemData.category)?.name || "",
-        categoryIcon: categories.find((c) => c.id === itemData.category)?.icon || "📦",
-      }
-      setItems((prev) => [...prev, newItem])
+        id: String(items.length + 1), // Ensure unique ID
+        createdAt: new Date().toISOString(), // Current date
+        updatedAt: new Date().toISOString(),
+        status: "Pending", // Default status
+        categoryName: categories.find((c) => String(c.id) === String(itemData.categoryId))?.name || "",
+        categoryIcon: categories.find((c) => String(c.id) === String(itemData.categoryId))?.icon || "📦",
+        images: [], // Initialize with empty images or handle accordingly
+      };
+      setItems((prev) => [...prev, newItem]);
     }
-    setShowForm(false)
-    setEditingItem(null)
-  }
+    setShowForm(false); // Close the form
+    setEditingItem(null); // Clear the editing state
+  };
 
-  const handleDeleteItem = (itemId) => {
-    setItems((prev) => prev.filter((item) => item.id !== itemId))
-  }
+  const handleDeleteItem = (itemId: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
+  };
 
-  const handleApproveItem = (itemId) => {
-    setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, status: "Approved" } : item)))
-  }
+  const handleApproveItem = (itemId: string) => {
+    setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, status: "Approved" } : item)));
+  };
 
-  const handleRejectItem = (itemId) => {
-    setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, status: "Rejected" } : item)))
-  }
+  const handleRejectItem = (itemId: string) => {
+    setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, status: "Rejected" } : item)));
+  };
 
-  const handleAddField = (field) => {
-    setCustomFields((prev) => [...prev, field])
-
-    // In a real application, you would send this to your backend
-    console.log("Added new custom field:", field)
-
-    // Update categories with the new field
+  const handleAddField = (field: any) => {
+    setCustomFields((prev) => [...prev, field]);
+    // Update categories with the new field if needed
     if (categoryFilter !== "all") {
       setCategories((prev) =>
         prev.map((category) =>
-          category.id === categoryFilter ? { ...category, fields: [...(category.fields || []), field] } : category,
-        ),
-      )
+          category.id === categoryFilter ? { ...category, fields: [...(category.fields || []), field] } : category
+        )
+      );
     }
-  }
+  };
 
   const columns = [
     {
@@ -326,7 +211,7 @@ export default function ItemsPage() {
       cell: ({ row }) => <span className="text-xl">{row.getValue("categoryIcon")}</span>,
     },
     {
-      accessorKey: "name",
+      accessorKey: "title",
       header: "Name",
     },
     {
@@ -341,33 +226,33 @@ export default function ItemsPage() {
       accessorKey: "price",
       header: "Price",
       cell: ({ row }) => {
-        const price = row.getValue("price")
-        return price ? `$${price}` : "N/A"
+        const price = row.getValue("price");
+        return price ? `$${price}` : "N/A";
       },
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status")
+        const status = row.getValue("status");
         switch (status) {
           case "Approved":
-            return <Badge className="bg-green-500">Approved</Badge>
+            return <Badge className="bg-green-500">Approved</Badge>;
           case "Rejected":
-            return <Badge className="bg-red-500">Rejected</Badge>
+            return <Badge className="bg-red-500">Rejected</Badge>;
           default:
-            return <Badge className="bg-yellow-500">Pending</Badge>
+            return <Badge className="bg-yellow-500">Pending</Badge>;
         }
       },
     },
     {
-      accessorKey: "date",
+      accessorKey: "createdAt",
       header: "Date",
     },
     {
       id: "actions",
       cell: ({ row }) => {
-        const item = row.original
+        const item = row.original;
         return (
           <div className="flex items-center gap-2">
             {item.status === "Pending" && (
@@ -390,10 +275,10 @@ export default function ItemsPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        )
+        );
       },
     },
-  ]
+  ];
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -415,8 +300,8 @@ export default function ItemsPage() {
               initialData={editingItem}
               onSave={handleSaveItem}
               onCancel={() => {
-                setShowForm(false)
-                setEditingItem(null)
+                setShowForm(false);
+                setEditingItem(null);
               }}
             />
           </ScrollArea>
@@ -456,10 +341,7 @@ export default function ItemsPage() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Filter className="mr-2 h-4 w-4" />
-                      Category:{" "}
-                      {categoryFilter === "all"
-                        ? "All"
-                        : categories.find((c) => c.id === categoryFilter)?.name || categoryFilter}
+                      Category: {categoryFilter === "all" ? "All" : categories.find((c) => c.id === categoryFilter)?.name || categoryFilter}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -498,6 +380,5 @@ export default function ItemsPage() {
         </Card>
       )}
     </div>
-  )
+  );
 }
-

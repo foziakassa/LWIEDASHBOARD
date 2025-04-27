@@ -12,7 +12,7 @@ import { FileText, Package, Users, AlertTriangle } from "lucide-react"
 export function AdminDashboard() {
   const [mounted, setMounted] = useState(false)
   const [stats, setStats] = useState([
-    { title: "Total Users", value: "0", icon: Users },
+    { title: "Total Users", value: "zzz0", icon: Users },
     { title: "Total Items", value: "0", icon: Package },
     { title: "Templates", value: "0", icon: FileText },
     { title: "Reported Items", value: "0", icon: AlertTriangle },

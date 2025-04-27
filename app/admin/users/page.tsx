@@ -10,73 +10,77 @@ import { RefreshCw, Plus, ChevronRight, Pencil, Trash2, Search, Filter } from "l
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { FieldAdder } from "@/components/field-adder"
 import { Separator } from "@/components/ui/separator"
+import axiosInstance from "@/shared/axiosinstance"
+import NewUser from "../newuser/page"
+import { useRouter } from "next/navigation"
+import { Alert } from "@/components/ui/alert"
+
+
+
+
+interface User {
+  id: string;
+  email: string;
+  password?: string; // optional if you won't display it
+  firstName: string;
+  lastName: string; 
+  bio?: string;
+  phone?: string;
+  image?: string;
+  role: string;
+  status: string;
+  lastLogin: string;
+  joinDate: string;
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([])
+  const router =useRouter()
+  const [users, setUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [filteredUsers, setFilteredUsers] = useState([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [customFields, setCustomFields] = useState([])
+  // const [customFields, setCustomFields] = useState([])
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    };
+  
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, options); // Format date as MM/DD/YYYY
+  };
+
 
   useEffect(() => {
     // Simulate API call
-    const fetchUsers = () => {
-      const mockUsers = [
-        {
-          id: "1",
-          name: "John Doe",
-          email: "john.doe@example.com",
-          role: "Admin",
-          status: "Active",
-          lastLogin: "2024-01-15 14:30",
-          joinDate: "2023-05-10",
-          avatar: "/placeholder.svg?height=40&width=40",
-        },
-        {
-          id: "2",
-          name: "Jane Smith",
-          email: "jane.smith@example.com",
-          role: "Manager",
-          status: "Active",
-          lastLogin: "2024-01-14 09:15",
-          joinDate: "2023-06-22",
-          avatar: "/placeholder.svg?height=40&width=40",
-        },
-        {
-          id: "3",
-          name: "Robert Johnson",
-          email: "robert.johnson@example.com",
-          role: "User",
-          status: "Inactive",
-          lastLogin: "2023-12-05 11:45",
-          joinDate: "2023-07-15",
-          avatar: "/placeholder.svg?height=40&width=40",
-        },
-        {
-          id: "4",
-          name: "Emily Davis",
-          email: "emily.davis@example.com",
-          role: "User",
-          status: "Active",
-          lastLogin: "2024-01-10 16:20",
-          joinDate: "2023-08-30",
-          avatar: "/placeholder.svg?height=40&width=40",
-        },
-        {
-          id: "5",
-          name: "Michael Wilson",
-          email: "michael.wilson@example.com",
-          role: "Manager",
-          status: "Suspended",
-          lastLogin: "2023-11-28 13:10",
-          joinDate: "2023-09-12",
-          avatar: "/placeholder.svg?height=40&width=40",
-        },
-      ]
-      setUsers(mockUsers)
-      setFilteredUsers(mockUsers)
-    }
+    const fetchUsers = async () => {
+      try {
+        const response = await axiosInstance.get('/users');
+        const data: User[] = response.data.map((user: any) => ({
+          id: user.id,
+          email: user.Email,
+          firstName: user.Firstname,
+          lastName: user.lastname, 
+          bio: user.Bio,
+          phone: user.Phone,
+          image: user.Image,
+          role: user.Role,
+          status: user.Status,
+          // lastLogin: user.LastLogin,
+          // joinDate: user.Createdat,
+          joinDate:formatDate(user.Createdat)
+        }));
+
+        setUsers(data);
+        setFilteredUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      }
+    };
+
 
     fetchUsers()
   }, [])
@@ -88,9 +92,9 @@ export default function UsersPage() {
     if (searchQuery) {
       filtered = filtered.filter(
         (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           user.email.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      );
     }
 
     if (roleFilter !== "all") {
@@ -104,12 +108,26 @@ export default function UsersPage() {
     setFilteredUsers(filtered)
   }, [searchQuery, roleFilter, statusFilter, users])
 
-  const handleAddField = (field) => {
-    setCustomFields((prev) => [...prev, field])
+  const handleAddField = (field: any) => {
+    setCustomFields((prev) => [...prev, field]);
+    console.log("Added new custom field to users:", field);
+  };
 
-    // In a real application, you would send this to your backend
-    console.log("Added new custom field to users:", field)
-  }
+  /// user deletion 
+  const handleDeleteUser = async (id: string) => {
+    if (confirm("Are you sure you want to delete this user?")) {
+      try {
+        await axiosInstance.delete(`/users/${id}`);
+
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
+        setFilteredUsers((prevFilteredUsers) => prevFilteredUsers.filter((user) => user.id !== id));
+        alert("User deleted successfully.");
+      } catch (error) {
+        console.error("Failed to delete user:", error);
+        alert("Failed to delete user.");
+      }
+    }
+  };
 
   const columns = [
     {
@@ -126,7 +144,7 @@ export default function UsersPage() {
       ),
     },
     {
-      accessorKey: "name",
+      accessorKey: "firstName",
       header: "Name",
     },
     {
@@ -144,6 +162,9 @@ export default function UsersPage() {
           case "Admin":
             badgeClass = "bg-purple-500"
             break
+            case "User":
+              badgeClass = "bg-purple-500"
+              break
           case "Manager":
             badgeClass = "bg-blue-500"
             break
@@ -195,12 +216,16 @@ export default function UsersPage() {
             <Button variant="ghost" size="icon" title="Edit">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="Delete">
+            <Button onClick={()=>{
+               handleDeleteUser(user.id)
+             
+            }}
+            variant="ghost" size="icon" title="Delete">
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="View Details">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <Button onClick={() => router.push(`/admin/userinfo/${user.id}`)} variant="ghost" size="icon" title="View Details">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
           </div>
         )
       },
@@ -212,7 +237,10 @@ export default function UsersPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Users</h1>
         <div className="flex gap-2">
-          <Button>
+          <Button onClick={()=>{
+           router.push('/admin/newuser'); // redirect to users list page
+            
+          }}>
             <Plus className="mr-2 h-4 w-4" /> Add User
           </Button>
           <FieldAdder onAddField={handleAddField} entityName="Users" />
@@ -293,4 +321,3 @@ export default function UsersPage() {
     </div>
   )
 }
-
