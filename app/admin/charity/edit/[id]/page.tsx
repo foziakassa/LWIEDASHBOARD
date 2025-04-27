@@ -77,7 +77,6 @@ export default function EditCharityPage() {
         onChange={(e) => setCharity((prev) => prev ? { ...prev, location: e.target.value } : { id: "", name: "", description: "", location: e.target.value })}
         className="mt-2 mb-4"
       />
-      ////
       <div className="flex justify-between">
         <Button onClick={handleUpdateCharity} variant="default">Save</Button>
         <Button onClick={() => router.push('/admin/charity')} variant="outline">Cancel</Button>
