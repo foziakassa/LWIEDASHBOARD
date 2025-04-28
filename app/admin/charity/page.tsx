@@ -5,28 +5,27 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
-import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, Edit } from "lucide-react" // Import Edit icon
+import { Trash2, Plus, Edit, Info } from "lucide-react" // Added Info icon
 import axiosInstance from "@/shared/axiosinstance"
-import { useRouter } from "next/navigation" // Import useRouter for navigation
+import { useRouter } from "next/navigation"
 
 interface Charity {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  created_at: string;
+  id: string
+  name: string
+  description: string
+  location: string
+  created_at: string
 }
 
 export default function CharityPage() {
-  const router = useRouter() // Initialize router
+  const router = useRouter()
   const [charities, setCharities] = useState<Charity[]>([])
   const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     const fetchCharities = async () => {
       try {
-        const response = await axiosInstance.get('/charities')
+        const response = await axiosInstance.get("/charities")
         setCharities(response.data)
       } catch (error) {
         console.error("Failed to fetch charities:", error)
@@ -39,7 +38,7 @@ export default function CharityPage() {
     if (confirm("Are you sure you want to delete this charity?")) {
       try {
         await axiosInstance.delete(`/charities/${id}`)
-        setCharities(prev => prev.filter(charity => charity.id !== id))
+        setCharities((prev) => prev.filter((charity) => charity.id !== id))
         alert("Charity deleted successfully.")
       } catch (error) {
         console.error("Failed to delete charity:", error)
@@ -48,10 +47,11 @@ export default function CharityPage() {
     }
   }
 
-  const filteredCharities = charities.filter(charity =>
-    charity.name.toLowerCase().includes(searchQuery.toLowerCase())
-    || charity.location.toLowerCase().includes(searchQuery.toLowerCase())
-    || charity.created_at.includes(searchQuery)
+  const filteredCharities = charities.filter(
+    (charity) =>
+      charity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      charity.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      charity.created_at.includes(searchQuery),
   )
 
   return (
@@ -65,7 +65,7 @@ export default function CharityPage() {
           className="flex-grow"
         />
         <Button
-          onClick={() => router.push('/admin/charity/newcharity')} // Navigate to the new charity page
+          onClick={() => router.push("/admin/charity/newcharity")}
           variant="ghost"
           className="ml-2 bg-white"
           title="Add Charity"
@@ -102,17 +102,29 @@ export default function CharityPage() {
                   cell: ({ row }) => (
                     <div className="flex items-center gap-4">
                       <Button
-                        onClick={() => router.push(`/admin/charity/edit/${row.original.id}`)} // Navigate to edit page
+                        onClick={() => router.push(`/admin/charity/${row.original.id}`)}
+                        variant="ghost"
+                        size="icon"
+                        title="View Info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => router.push(`/admin/charity/edit/${row.original.id}`)}
                         variant="ghost"
                         size="icon"
                         title="Edit"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button onClick={() => handleDeleteCharity(row.original.id)} variant="ghost" size="icon" title="Delete">
+                      <Button
+                        onClick={() => handleDeleteCharity(row.original.id)}
+                        variant="ghost"
+                        size="icon"
+                        title="Delete"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      
                     </div>
                   ),
                 },
