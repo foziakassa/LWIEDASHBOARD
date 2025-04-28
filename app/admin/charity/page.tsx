@@ -112,6 +112,7 @@ export default function CharityPage() {
                       <Button onClick={() => handleDeleteCharity(row.original.id)} variant="ghost" size="icon" title="Delete">
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      
                     </div>
                   ),
                 },
