@@ -19,6 +19,7 @@ export default function AdminLayout({
           <NotificationsPage />
 
           </div> */}
+          <NotificationsPage/>
           <UserNav />
         </header>
         <main className="flex-1 p-4 overflow-auto bg-[#e5eded] dark:bg-gray-900">{children}</main>

@@ -1,343 +1,228 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import Link from "next/link"
-import Image from "next/image"
-import { motion } from "framer-motion"
-import { Bell, MessageSquare, Repeat, Heart, Gift, Settings, Check, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
+import { Bell, Check } from "lucide-react"
+import { approveAdvertisement } from "./action"
+import { Button } from "@/components/ui/button"
+import { toast } from "@/hooks/use-toast"
+import fetcher from "@/shared/fecher"
 
-// Mock notifications data
-const allNotifications = [
-  {
-    id: 1,
-    type: "swap_request",
-    read: false,
-    title: "New swap request",
-    message: "John wants to swap his iPhone 12 for your MacBook Pro",
-    time: "5 minutes ago",
-    actionUrl: "/swaps/123",
-    user: {
-      name: "John Doe",
-      image: "/placeholder.svg",
-    },
-    item: {
-      title: "iPhone 12",
-      image: "/placeholder.svg",
-    },
-  },
-  // {
-  //   id: 2,
-  //   type: "message",
-  //   read: false,
-  //   title: "New message received",
-  //   message: "Sarah: Is this item still available for swap?",
-  //   time: "30 minutes ago",
-  //   actionUrl: "/messages/456",
-  //   user: {
-  //     name: "Sarah Johnson",
-  //     image: "/placeholder.svg",
-  //   },
-  // },
-  {
-    id: 3,
-    type: "swap_accepted",
-    read: true,
-    title: "Swap accepted",
-    message: "Michael accepted your swap request for the Mountain Bike",
-    time: "2 hours ago",
-    actionUrl: "/swaps/789",
-    user: {
-      name: "Michael Brown",
-      image: "/placeholder.svg",
-    },
-    item: {
-      title: "Mountain Bike",
-      image: "/placeholder.svg",
-    },
-  },
-  {
-    id: 4,
-    type: "swap_rejected",
-    read: true,
-    title: "Swap declined",
-    message: "Emma declined your swap request for the Designer Sofa",
-    time: "5 hours ago",
-    actionUrl: "/swaps/101",
-    user: {
-      name: "Emma Wilson",
-      image: "/placeholder.svg",
-    },
-    item: {
-      title: "Designer Sofa",
-      image: "/placeholder.svg",
-    },
-  },
-  {
-    id: 5,
-    type: "like",
-    read: true,
-    title: "Someone liked your item",
-    message: "David liked your Vintage Camera listing",
-    time: "1 day ago",
-    actionUrl: "/items/112",
-    user: {
-      name: "David Clark",
-      image: "/placeholder.svg",
-    },
-    item: {
-      title: "Vintage Camera",
-      image: "/placeholder.svg",
-    },
-  },
-  {
-    id: 6,
-    type: "donation",
-    read: true,
-    title: "Donation received",
-    message: "Ethiopian Red Cross Society received your donation of Winter Clothes",
-    time: "2 days ago",
-    actionUrl: "/donations/133",
-    charity: {
-      name: "Ethiopian Red Cross Society",
-      image: "/placeholder.svg",
-    },
-    item: {
-      title: "Winter Clothes",
-      image: "/placeholder.svg",
-    },
-  },
-]
+type Notification = {
+  id: number
+  company_name: string
+  email: string
+  phone_number: string
+  product_description: string
+  created_at?: string
+  approved?: boolean
+}
 
-// Define notification filter types
-const notificationTypes = [
-  { id: "all", label: "All", icon: Bell },
-  { id: "swap_request", label: "Swap Requests", icon: Repeat },
-  // { id: "message", label: "Messages", icon: MessageSquare },
-  { id: "like", label: "Likes", icon: Heart },
-  { id: "donation", label: "Donations", icon: Gift },
-]
+export default function NotificationsComponent() {
+  const router = useRouter()
+  const notificationRef = useRef<HTMLDivElement>(null)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(false)
 
-export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState("all")
-  const [notifications, setNotifications] = useState(allNotifications)
+  // Fetch notifications function - defined outside useEffect for reusability
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true)
+      console.log("Fetching notifications...")
 
-  // Filter notifications by type
-  const filteredNotifications =
-    activeTab === "all" ? notifications : notifications.filter((notif) => notif.type === activeTab)
+      const response = await fetcher("/advertisements")
+      console.log("API response:", response)
 
-  // Icon mapping for notification types
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "swap_request":
-      case "swap_accepted":
-      case "swap_rejected":
-        return <Repeat className="h-5 w-5" />
-      // case "message":
-      //   return <MessageSquare className="h-5 w-5" />
-      case "like":
-        return <Heart className="h-5 w-5" />
-      case "donation":
-        return <Gift className="h-5 w-5" />
-      default:
-        return <Bell className="h-5 w-5" />
+      if (response && Array.isArray(response)) { // Check if response exists and is an array
+        // Filter out only unapproved advertisements if needed
+        const pendingAds = response.filter((ad: Notification) => !ad.approved)
+        console.log("Response data:", response) // Corrected log
+        console.log("Pending ads to set:", pendingAds)
+        setNotifications(pendingAds)
+      } else {
+        console.log("No data in response or invalid response format")
+        setNotifications([])
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error)
+      setNotifications([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Fetch notifications on mount
+  useEffect(() => {
+    fetchNotifications()
+
+    // Poll for new notifications every 5 minutes
+    const interval = setInterval(fetchNotifications, 300000)
+
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  // Log notifications state AFTER it updates
+  useEffect(() => {
+    console.log("Current notifications state:", notifications)
+  }, [notifications])
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  // Handle approve advertisement
+  const handleApprove = async (id: number) => {
+    try {
+      await approveAdvertisement(id.toString())
+
+      // Update notifications list - remove the approved notification
+      setNotifications((prev) => prev.filter((notification) => notification.id !== id))
+
+      toast({
+        title: "Success",
+        description: "Advertisement has been approved",
+      })
+    } catch (error) {
+      console.error("Error approving advertisement:", error)
+      toast({
+        title: "Error",
+        description: "Failed to approve advertisement",
+        variant: "destructive",
+      })
     }
   }
 
-  // Mark notification as read
-  const markAsRead = (id: number) => {
-    setNotifications((prev) => prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
+  // Handle view advertisement details
+  const handleViewDetails = (id: number) => {
+    router.push(`/admin/advertisements/${id}`)
+    setShowNotifications(false)
   }
 
-  // Mark all notifications as read
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
+  // Format time ago from date string
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return ""
+
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return `${diffInSeconds} sec ago`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
   }
 
-  // Delete notification
-  const deleteNotification = (id: number) => {
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id))
+  // For debugging - force immediate fetch
+  const handleManualRefresh = () => {
+    fetchNotifications()
   }
-
-  // Count unread notifications
-  const unreadCount = notifications.filter((notif) => !notif.read).length
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
-              {unreadCount > 0 && (
-                <p className="text-gray-600 dark:text-gray-300 text-sm">You have {unreadCount} unread notifications</p>
-              )}
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={markAllAsRead}
-                className="flex items-center px-3 py-2 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Check className="h-4 w-4 mr-2 text-teal-600" />
-                <span className="text-sm">Mark all as read</span>
-              </button>
-              <button className="p-2 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Settings className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              </button>
-            </div>
-          </div>
+    <div className="relative" ref={notificationRef}>
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowNotifications(!showNotifications)}
+        className="text-white bg-teal-600 p-2 rounded-full relative"
+      >
+        <Bell className="h-6 w-6" />
+        {notifications && notifications.length > 0 && (
+          <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 rounded-full text-xs flex items-center justify-center">
+            {notifications.length}
+          </span>
+        )}
+      </motion.button>
 
-          {/* Notification Tabs */}
-          <div className="flex overflow-x-auto scrollbar-hide mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            {notificationTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setActiveTab(type.id)}
-                className={`flex items-center px-4 py-3 text-sm whitespace-nowrap ${
-                  activeTab === type.id
-                    ? "text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400 font-medium"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <type.icon className="h-4 w-4 mr-2" />
-                {type.label}
-                {type.id === "all" && unreadCount > 0 && (
-                  <span className="ml-2 bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Notifications List */}
+      <AnimatePresence>
+        {showNotifications && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-3"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg overflow-hidden z-10"
           >
-            {filteredNotifications.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
-                <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                <h3 className="text-gray-900 dark:text-white text-lg font-medium mb-2">No notifications</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  You don't have any {activeTab !== "all" ? activeTab.replace("_", " ") : ""} notifications right now.
-                </p>
-              </div>
-            ) : (
-              filteredNotifications.map((notification) => (
-                <motion.div
-                  key={notification.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 ${
-                    !notification.read ? "border-l-4 border-teal-500" : ""
-                  }`}
+            <div className="flex justify-between items-center px-4 py-2 bg-teal-50 dark:bg-teal-900">
+              <h3 className="font-medium text-teal-900 dark:text-white">Notifications</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleManualRefresh}
+                  className="text-sm text-teal-600 dark:text-teal-400 hover:underline"
                 >
-                  <div className="flex">
-                    <div
-                      className={`p-2 rounded-full ${
-                        !notification.read
-                          ? "bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400"
-                          : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      {getNotificationIcon(notification.type)}
+                  Refresh
+                </button>
+                <Link
+                  href="/admin/notifications"
+                  className="text-sm text-teal-600 dark:text-teal-400 hover:underline"
+                  onClick={() => setShowNotifications(false)}
+                >
+                  View All
+                </Link>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading notifications...</div>
+            ) : !notifications || notifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No new notifications</div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <div className="flex justify-between">
+                      <p className="font-medium text-gray-900 dark:text-white">{notification.company_name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatTimeAgo(notification.created_at)}
+                      </p>
                     </div>
-                    <div className="ml-4 flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">{notification.title}</h3>
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{notification.message}</p>
-                        </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{notification.time}</span>
-                      </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">New advertisement submission</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+                      {notification.product_description}
+                    </p>
 
-                      {/* Swap, Like or Donation Details */}
-                      {(notification.type.includes("swap") ||
-                        notification.type === "like" ||
-                        notification.type === "donation") &&
-                        notification.item && (
-                          <div className="mt-3 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
-                            <div className="flex items-center">
-                              {notification.user && (
-                                <div className="flex items-center mr-4">
-                                  <div className="h-8 w-8 relative rounded-full overflow-hidden mr-2">
-                                    <Image
-                                      src={notification.user.image || "/placeholder.svg"}
-                                      alt={notification.user.name}
-                                      fill
-                                      className="object-cover"
-                                    />
-                                  </div>
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    {notification.user.name}
-                                  </span>
-                                </div>
-                              )}
-
-                              {notification.charity && (
-                                <div className="flex items-center mr-4">
-                                  <div className="h-8 w-8 relative rounded-full overflow-hidden mr-2">
-                                    <Image
-                                      src={notification.charity.image || "/placeholder.svg"}
-                                      alt={notification.charity.name}
-                                      fill
-                                      className="object-cover"
-                                    />
-                                  </div>
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    {notification.charity.name}
-                                  </span>
-                                </div>
-                              )}
-
-                              <div className="h-12 w-12 relative rounded-md overflow-hidden ml-auto">
-                                <Image
-                                  src={notification.item.image || "/placeholder.svg"}
-                                  alt={notification.item.title}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                      <div className="mt-3 flex justify-between items-center">
-                        <Link
-                          href={notification.actionUrl}
-                          className="text-teal-600 dark:text-teal-400 text-sm font-medium hover:underline"
-                          onClick={() => markAsRead(notification.id)}
+                    {!notification.approved && (
+                      <div className="flex space-x-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-8"
+                          onClick={() => handleViewDetails(notification.id)}
                         >
-                          View details
-                        </Link>
-                        <div className="flex space-x-2">
-                          {!notification.read && (
-                            <button
-                              onClick={() => markAsRead(notification.id)}
-                              className="p-1 text-gray-500 hover:text-teal-600 dark:hover:text-teal-400"
-                              title="Mark as read"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => deleteNotification(notification.id)}
-                            className="p-1 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
-                            title="Delete notification"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+                          Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleApprove(notification.id)}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
                       </div>
-                    </div>
+                    )}
                   </div>
-                </motion.div>
-              ))
+                ))}
+              </div>
             )}
           </motion.div>
-        </div>
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
