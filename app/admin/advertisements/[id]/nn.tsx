@@ -1,26 +1,25 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-// import { getAdvertisementById, approveAdvertisement } from "../../notification/action" // Import getAdvertisementById
-import { approveAdvertisement } from "../../notification/action"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ArrowLeft, Mail, Phone } from "lucide-react"
+import { ArrowLeft, Mail, Phone, ImageOff } from "lucide-react"
 import fetcher from "@/shared/fecher"
-import { ApproveAdvertisementForm } from "../components/approval-form"
+import { ApproveAdvertisementForm } from "../components/approve-form"
+
 export default async function AdvertisementDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = params
 
   // Fetch advertisement details
-  const advertisement = await fetcher(`/advertisements/${id}`);
+  const response = await fetcher(`/advertisements/${id}`)
 
-  if (!advertisement) {
-    notFound();
-    return null; // or handle the notFound case appropriately
+  // Check if we have a valid response with data
+  if (!response || !response.data) {
+    notFound()
   }
-  // Convert binary image data to base64 if needed
-  const imageUrl = advertisement.product_image
+
+  // Extract the advertisement data from the response
+  const advertisement = response.data
 
   // Format date
   const createdAt = new Date(advertisement.created_at || Date.now()).toLocaleDateString("en-US", {
@@ -30,6 +29,12 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
     hour: "2-digit",
     minute: "2-digit",
   })
+
+  // Handle image URL properly
+  const hasValidImage =
+    advertisement.product_image &&
+    typeof advertisement.product_image === "string" &&
+    advertisement.product_image.trim() !== ""
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -65,45 +70,29 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
               <div>
                 <h3 className="text-lg font-medium mb-2">Product Image</h3>
                 <div className="border rounded-lg overflow-hidden">
-                  {/* This is a placeholder. In a real app, you'd use the actual image */}
-                  <Image
-                    src={advertisement.product_image }
-                    alt={`${advertisement.company_name} product`}
-                    width={500}
-                    height={300}
-                    className="w-full object-contain"
-                  />
+                  {hasValidImage ? (
+                    <Image
+                      src={advertisement.product_image || "/placeholder.svg"}
+                      alt={`${advertisement.company_name} product`}
+                      width={500}
+                      height={300}
+                      className="w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 h-[300px]">
+                      <ImageOff className="h-12 w-12 text-gray-400 mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">No image available</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
 
             {!advertisement.approved && (
               <CardFooter>
-                <form
-                  action={async () => {
-                    "use server"
-                    try {
-                      await approveAdvertisement(id);
-                      // Consider redirecting or refreshing the data after approval
-                    } catch (error) {
-                      console.error("Failed to approve advertisement:", error);
-                      // Handle error appropriately (e.g., display an error message)
-                    }
-                  }}
-                >
-                  <Button type="submit" className="bg-teal-600 hover:bg-teal-700">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    Approve Advertisement
-                  </Button>
-                </form>
+                <ApproveAdvertisementForm id={id} />
               </CardFooter>
             )}
-            
-                        {!advertisement.approved && (
-                          <CardFooter>
-                            <ApproveAdvertisementForm id={id} />
-                          </CardFooter>
-                        )}
           </Card>
         </div>
 
