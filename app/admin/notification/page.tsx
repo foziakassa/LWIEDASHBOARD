@@ -9,7 +9,9 @@ import { approveAdvertisement } from "./action"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
 import fetcher from "@/shared/fecher"
-
+import { CardFooter } from "@/components/ui/card"
+import { ApproveAdvertisementForm } from "../advertisements/components/approval-form"
+import AllAdvertisment from "../advertisements/components/allad/page"
 type Notification = {
   id: number
   company_name: string
@@ -82,7 +84,6 @@ export default function NotificationsComponent() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
-
   // Handle approve advertisement
   const handleApprove = async (id: number) => {
     try {
@@ -165,7 +166,7 @@ export default function NotificationsComponent() {
                   Refresh
                 </button>
                 <Link
-                  href="/admin/notifications"
+                  href="/admin/advertisements/components/allad"
                   className="text-sm text-teal-600 dark:text-teal-400 hover:underline"
                   onClick={() => setShowNotifications(false)}
                 >
@@ -206,14 +207,18 @@ export default function NotificationsComponent() {
                         >
                           Details
                         </Button>
-                        <Button
+                        
+                        {/* <Button
                           size="sm"
                           className="flex-1 h-8 bg-green-600 hover:bg-green-700"
                           onClick={() => handleApprove(notification.id)}
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Approve
-                        </Button>
+                        </Button> */}
+                        <CardFooter>
+                            <ApproveAdvertisementForm id={notification.id} />
+                          </CardFooter>
                       </div>
                     )}
                   </div>

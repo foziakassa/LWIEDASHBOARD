@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, LayoutTemplate, Users, Settings, ChevronDown, Gift } from "lucide-react"
+import { LayoutDashboard, Package, LayoutTemplate, Users, Settings, ChevronDown, Gift, Megaphone } from "lucide-react"
 
 // Updated navigation without Purchase Order and Measurement
 const mainNav = [
@@ -32,16 +32,17 @@ const mainNav = [
     href: "/admin/users",
     icon: Users,
   },
-  // {
-  //   title: "Settings",
-  //   href: "/admin/settings",
-  //   icon: Settings,
-  // },
+ 
   {
     title: "Charity",
     href: "/admin/charity",
     icon: Gift,
   },
+  {
+    title: "Advertisment",
+    href: "/admin/advertisements/components/allad",
+    icon:  Megaphone, // Or Bullhorn
+  }
 ]
 
 export function MainNav() {
