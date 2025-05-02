@@ -6,18 +6,19 @@ import { approveAdvertisement } from "../../notification/action"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ArrowLeft, Mail, Phone } from "lucide-react"
+import { CheckCircle, ArrowLeft, Mail, Phone, DollarSign, Calendar } from "lucide-react"
 import fetcher from "@/shared/fecher"
 import { ApproveAdvertisementForm } from "../components/approval-form"
+
 export default async function AdvertisementDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = params
 
   // Fetch advertisement details
-  const advertisement = await fetcher(`/advertisements/${id}`);
+  const advertisement = await fetcher(`/advertisements/${id}`)
 
   if (!advertisement) {
-    notFound();
-    return null; // or handle the notFound case appropriately
+    notFound()
+    return null // or handle the notFound case appropriately
   }
   // Convert binary image data to base64 if needed
   const imageUrl = advertisement.product_image
@@ -67,26 +68,26 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
                 <div className="border rounded-lg overflow-hidden">
                   {/* This is a placeholder. In a real app, you'd use the actual image */}
                   <Image
-                    src={advertisement.product_image }
+                    src={advertisement.product_image || "/placeholder.svg"}
                     alt={`${advertisement.company_name} product`}
                     width={500}
                     height={300}
-                    className="w-full object-contain"
+                    className="w-full h-72 "
                   />
                 </div>
               </div>
             </CardContent>
 
-            {!advertisement.approved && (
+            {/* {!advertisement.approved && (
               <CardFooter>
                 <form
                   action={async () => {
                     "use server"
                     try {
-                      await approveAdvertisement(id);
+                      await approveAdvertisement(id)
                       // Consider redirecting or refreshing the data after approval
                     } catch (error) {
-                      console.error("Failed to approve advertisement:", error);
+                      console.error("Failed to approve advertisement:", error)
                       // Handle error appropriately (e.g., display an error message)
                     }
                   }}
@@ -97,17 +98,17 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
                   </Button>
                 </form>
               </CardFooter>
+            )} */}
+
+            {!advertisement.approved && (
+              <CardFooter>
+                <ApproveAdvertisementForm id={id} />
+              </CardFooter>
             )}
-            
-                        {!advertisement.approved && (
-                          <CardFooter>
-                            <ApproveAdvertisementForm id={id} />
-                          </CardFooter>
-                        )}
           </Card>
         </div>
 
-        <div>
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
@@ -127,6 +128,66 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
               </div>
             </CardContent>
           </Card>
+
+          {!advertisement.approved && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="payment" className="text-sm font-medium">
+                      Payment Amount
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <input
+                        type="number"
+                        id="payment"
+                        name="payment"
+                        className="pl-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="duration" className="text-sm font-medium flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Duration
+                    </label>
+                    <select
+                      id="duration"
+                      name="duration"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="1week">1 Week</option>
+                      <option value="2weeks">2 Weeks</option>
+                      <option value="1month">1 Month</option>
+                      <option value="3months">3 Months</option>
+                      <option value="6months">6 Months</option>
+                      <option value="1year">1 Year</option>
+                    </select>
+                  </div>
+                </form>
+              </CardContent>
+              {/* <CardFooter>
+                <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
+                  Submit Payment
+                </Button>
+              </CardFooter> */}
+              
+              <CardFooter>
+                <ApproveAdvertisementForm id={id} />
+              </CardFooter>
+           
+            </Card>
+          )}
         </div>
       </div>
     </div>
