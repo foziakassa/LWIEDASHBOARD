@@ -50,7 +50,7 @@ export default async function AdvertisementDetailPage({ params }: { params: { id
                   <CardTitle className="text-2xl">{advertisement.company_name}</CardTitle>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Submitted on {createdAt}</p>
                 </div>
-                <Badge variant={advertisement.approved ? "success" : "outline"}>
+                <Badge variant={advertisement.approved ? "default" : "secondary"}>
                   {advertisement.approved ? "Approved" : "Pending"}
                 </Badge>
               </div>
