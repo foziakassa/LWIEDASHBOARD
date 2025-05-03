@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
 import fetcher from "@/shared/fecher"
 import { CardFooter } from "@/components/ui/card"
-import { ApproveAdvertisementForm } from "../advertisements/components/approval-form"
+// import { ApproveAdvertisementForm } from "../advertisements/components/approval-form"
 import AllAdvertisment from "../advertisements/components/allad/page"
 type Notification = {
   id: number
@@ -216,9 +216,9 @@ export default function NotificationsComponent() {
                           <Check className="h-4 w-4 mr-1" />
                           Approve
                         </Button> */}
-                        <CardFooter>
+                        {/* <CardFooter>
                             <ApproveAdvertisementForm id={notification.id} />
-                          </CardFooter>
+                          </CardFooter> */}
                       </div>
                     )}
                   </div>
