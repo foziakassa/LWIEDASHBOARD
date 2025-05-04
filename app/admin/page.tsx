@@ -1,9 +1,18 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Overview } from "@/components/dashboard/overview"
 import { RecentItems } from "@/components/dashboard/recent-items"
 import { FileText, Package, BarChart3, Upload } from "lucide-react"
 
-const stats = [
+interface StatsItem {
+  title: string
+  value: string | number // Allow number for dynamic value
+  icon: React.ComponentType<{ className?: string }> // Correct type for icon
+}
+
+const initialStats: StatsItem[] = [
   {
     title: "Total Template",
     value: "15",
@@ -11,7 +20,7 @@ const stats = [
   },
   {
     title: "Total Items",
-    value: "23",
+    value: "Loading...", // Initial loading state
     icon: Package,
   },
   {
@@ -27,6 +36,37 @@ const stats = [
 ]
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<StatsItem[]>(initialStats)
+
+  useEffect(() => {
+    async function fetchItemCount() {
+      try {
+        const response = await fetch("https://liwedoc.vercel.app/api/items")
+        if (!response.ok) {
+          throw new Error("Failed to fetch item count")
+        }
+        const data = await response.json()
+
+        // Update the "Total Items" stat with the count from the API
+        setStats((prevStats) => {
+          const newStats = [...prevStats]
+          newStats[1] = { ...newStats[1], value: data.count } // Update the value
+          return newStats
+        })
+      } catch (error) {
+        console.error("Error fetching item count:", error)
+        // Handle error - display an error message or default value
+        setStats((prevStats) => {
+          const newStats = [...prevStats]
+          newStats[1] = { ...newStats[1], value: "Error" } // Display "Error" or a default value
+          return newStats
+        })
+      }
+    }
+
+    fetchItemCount()
+  }, []) // Empty dependency array - run only once on mount
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -57,4 +97,3 @@ export default function AdminDashboard() {
     </div>
   )
 }
-
