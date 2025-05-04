@@ -189,9 +189,8 @@ export default function ProfilePage() {
       )}
 
       <Tabs defaultValue="personal" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 md:w-auto">
+        <TabsList className="grid w-full grid-cols-2 md:w-auto">
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
@@ -304,142 +303,6 @@ export default function ProfilePage() {
                   <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
                 </>
               )}
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>Update your password to keep your account secure</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    className="pl-10"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Password must be at least 8 characters and include a number and a special character
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSavePassword} className="ml-auto">
-                Update Password
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <h4 className="font-medium">Two-Factor Authentication</h4>
-                  <p className="text-sm text-muted-foreground">Receive a verification code via SMS when signing in</p>
-                </div>
-                <Switch defaultChecked={false} />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <h4 className="font-medium">Authenticator App</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Use an authenticator app to generate verification codes
-                  </p>
-                </div>
-                <Button variant="outline">Set Up</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Session Management</CardTitle>
-              <CardDescription>Manage your active sessions and devices</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Current Session</h4>
-                    <p className="text-sm text-muted-foreground">Chrome on Windows • San Francisco, CA • Active now</p>
-                  </div>
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full dark:bg-green-900/30 dark:text-green-400">
-                    Current
-                  </span>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Mobile App</h4>
-                    <p className="text-sm text-muted-foreground">
-                      iPhone 13 • San Francisco, CA • Last active 2 hours ago
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Revoke
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Firefox</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Firefox on MacOS • New York, NY • Last active 5 days ago
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Revoke
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="destructive" className="ml-auto">
-                Revoke All Other Sessions
-              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
