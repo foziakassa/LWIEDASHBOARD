@@ -14,9 +14,9 @@ interface StatsItem {
 
 const initialStats: StatsItem[] = [
   {
-    title: "Total Template",
-    value: "15",
-    icon: FileText,
+    title: "Total Users", // Changed title
+    value: "Loading...", // Initial loading state
+    icon: FileText, // Changed icon (optional, use a user icon if you have one)
   },
   {
     title: "Total Items",
@@ -39,6 +39,32 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<StatsItem[]>(initialStats)
 
   useEffect(() => {
+    async function fetchUserData() {
+      try {
+        const response = await fetch("https://liwedoc.vercel.app/users") // Use user API endpoint
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data")
+        }
+        const data = await response.json()
+        const userCount = Array.isArray(data) ? data.length : 0
+
+        // Update the "Total Users" stat with the user count from the API
+        setStats((prevStats) => {
+          const newStats = [...prevStats]
+          newStats[0] = { ...newStats[0], value: userCount } // Update the value
+          return newStats
+        })
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        // Handle error - display an error message or default value
+        setStats((prevStats) => {
+          const newStats = [...prevStats]
+          newStats[0] = { ...newStats[0], value: "Error" } // Display "Error" or a default value
+          return newStats
+        })
+      }
+    }
+
     async function fetchItemCount() {
       try {
         const response = await fetch("https://liwedoc.vercel.app/api/items")
@@ -64,6 +90,7 @@ export default function AdminDashboard() {
       }
     }
 
+    fetchUserData()
     fetchItemCount()
   }, []) // Empty dependency array - run only once on mount
 
