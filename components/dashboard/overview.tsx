@@ -556,6 +556,65 @@ export function Overview() {
     return date.toLocaleString("default", { month: "long", year: "numeric" })
   }
 
+  // --- Render Chart Based on Time Period ---
+  const renderChart = () => {
+    // Always use LineChart for comparison view
+    if (dataType === "comparison") {
+      return (
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="visitors" stroke="#004D4D" activeDot={{ r: 8 }} name="Unique Visitors" />
+          <Line type="monotone" dataKey="users" stroke="#82ca9d" name="Users" />
+        </LineChart>
+      )
+    }
+
+    // Use LineChart for daily and weekly views
+    if (timePeriod === "daily" || timePeriod === "weekly") {
+      return (
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `${value}`}
+          />
+          <Tooltip
+            formatter={(value) => [`${value} ${dataType === "visitors" ? "unique visitors" : "users"}`, "Total"]}
+          />
+          <Line
+            type="monotone"
+            dataKey={dataType}
+            stroke="#004D4D"
+            strokeWidth={2}
+            activeDot={{ r: 6 }}
+            dot={{ r: 4 }}
+            name={dataType === "visitors" ? "Unique Visitors" : "Users"}
+          />
+        </LineChart>
+      )
+    }
+
+    // Use BarChart for monthly and annual views
+    return (
+      <BarChart data={chartData}>
+        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+        <Tooltip
+          formatter={(value) => [`${value} ${dataType === "visitors" ? "unique visitors" : "users"}`, "Total"]}
+        />
+        <Bar dataKey={dataType} fill="#004D4D" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    )
+  }
+
   // --- Render ---
 
   if (loading) {
@@ -605,32 +664,7 @@ export function Overview() {
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={350}>
-        {dataType === "comparison" ? (
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="visitors" stroke="#004D4D" activeDot={{ r: 8 }} name="Unique Visitors" />
-            <Line type="monotone" dataKey="users" stroke="#82ca9d" name="Users" />
-          </LineChart>
-        ) : (
-          <BarChart data={chartData}>
-            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}`}
-            />
-            <Tooltip
-              formatter={(value) => [`${value} ${dataType === "visitors" ? "unique visitors" : "users"}`, "Total"]}
-            />
-            <Bar dataKey={dataType} fill="#004D4D" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        )}
+        {renderChart()}
       </ResponsiveContainer>
     </div>
   )
