@@ -1,71 +1,150 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+} from "recharts"
 
 interface Visitor {
   ip_address: string
   visit_time: string
 }
 
+interface User {
+  id: number
+  Firstname: string
+  Lastname: string
+  Email: string
+  Createdat: string
+  activated: boolean
+  Role: string
+}
+
 interface ChartData {
   name: string
-  total: number
-  startDate?: string // ISO string for the start of the period (optional)
+  visitors?: number
+  users?: number
+  startDate?: string
 }
 
 type TimePeriod = "daily" | "weekly" | "monthly" | "annual"
+type DataType = "visitors" | "users" | "comparison"
 
 export function Overview() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly") // Default to monthly
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly")
+  const [dataType, setDataType] = useState<DataType>("visitors")
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchVisitorData() {
+    async function fetchData() {
       try {
         setLoading(true)
-        const response = await fetch("https://liwedoc.vercel.app/visitors")
+        let visitors: Visitor[] = []
+        let users: User[] = []
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch visitor data")
+        if (dataType === "visitors" || dataType === "comparison") {
+          const visitorResponse = await fetch("https://liwedoc.vercel.app/visitors")
+          if (!visitorResponse.ok) {
+            throw new Error("Failed to fetch visitor data")
+          }
+          visitors = await visitorResponse.json()
         }
 
-        const visitors: Visitor[] = await response.json()
+        if (dataType === "users" || dataType === "comparison") {
+          const userResponse = await fetch("https://liwedoc.vercel.app/users")
+          if (!userResponse.ok) {
+            throw new Error("Failed to fetch user data")
+          }
+          users = await userResponse.json()
+        }
 
-        // Process visitors based on the selected time period
         let processedData: ChartData[] = []
-        switch (timePeriod) {
-          case "daily":
-            processedData = processDailyUniqueVisitors(visitors)
+
+        switch (dataType) {
+          case "visitors":
+            processedData = processVisitorData(visitors, timePeriod)
             break
-          case "weekly":
-            processedData = processWeeklyUniqueVisitors(visitors)
+          case "users":
+            processedData = processUserData(users, timePeriod)
             break
-          case "monthly":
-            processedData = processMonthlyUniqueVisitors(visitors)
-            break
-          case "annual":
-            processedData = processAnnualUniqueVisitors(visitors)
+          case "comparison":
+            processedData = processComparisonData(visitors, users, timePeriod)
             break
         }
 
         setChartData(processedData)
       } catch (err) {
-        console.error("Error fetching visitor data:", err)
-        setError("Failed to load visitor data")
+        console.error("Error fetching data:", err)
+        setError("Failed to load data")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchVisitorData()
-  }, [timePeriod]) // Re-fetch data when the time period changes
+    fetchData()
+  }, [timePeriod, dataType])
 
   // --- Data Processing Functions ---
 
-  function processDailyUniqueVisitors(visitors: Visitor[]): ChartData[] {
+  function processVisitorData(visitors: Visitor[], timePeriod: TimePeriod): ChartData[] {
+    switch (timePeriod) {
+      case "daily":
+        return processDailyVisitors(visitors)
+      case "weekly":
+        return processWeeklyVisitors(visitors)
+      case "monthly":
+        return processMonthlyVisitors(visitors)
+      case "annual":
+        return processAnnualVisitors(visitors)
+      default:
+        return []
+    }
+  }
+
+  function processUserData(users: User[], timePeriod: TimePeriod): ChartData[] {
+    switch (timePeriod) {
+      case "daily":
+        return processDailyUsers(users)
+      case "weekly":
+        return processWeeklyUsers(users)
+      case "monthly":
+        return processMonthlyUsers(users)
+      case "annual":
+        return processAnnualUsers(users)
+      default:
+        return []
+    }
+  }
+
+  function processComparisonData(visitors: Visitor[], users: User[], timePeriod: TimePeriod): ChartData[] {
+    switch (timePeriod) {
+      case "daily":
+        return processDailyComparison(visitors, users)
+      case "weekly":
+        return processWeeklyComparison(visitors, users)
+      case "monthly":
+        return processMonthlyComparison(visitors, users)
+      case "annual":
+        return processAnnualComparison(visitors, users)
+      default:
+        return []
+    }
+  }
+
+  // --- Visitor Data Processing ---
+
+  function processDailyVisitors(visitors: Visitor[]): ChartData[] {
     const dayMap = new Map<string, Set<string>>()
 
     visitors.forEach((visitor) => {
@@ -76,6 +155,7 @@ export function Overview() {
         dayMap.set(dayKey, new Set())
       }
 
+      // Add IP to the set for this day (sets only store unique values)
       dayMap.get(dayKey)?.add(visitor.ip_address)
     })
 
@@ -85,21 +165,22 @@ export function Overview() {
 
         return {
           name: formatShortDate(date),
-          total: ipSet.size,
+          visitors: ipSet.size,
+          startDate: dayKey, // Keep the original date for sorting
         }
       })
-      .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
 
-    return dailyData.slice(-14)
+    return dailyData.slice(-14) // Last 14 days
   }
 
-  function processWeeklyUniqueVisitors(visitors: Visitor[]): ChartData[] {
+  function processWeeklyVisitors(visitors: Visitor[]): ChartData[] {
     const weekMap = new Map<string, Set<string>>()
 
     visitors.forEach((visitor) => {
       const visitDate = new Date(visitor.visit_time)
-      const startOfWeek = getStartOfWeek(visitDate) // Get the start of the week
-      const weekKey = startOfWeek.toISOString().split("T")[0] // Use ISO string as key
+      const startOfWeek = getStartOfWeek(visitDate)
+      const weekKey = startOfWeek.toISOString().split("T")[0]
 
       if (!weekMap.has(weekKey)) {
         weekMap.set(weekKey, new Set())
@@ -113,23 +194,22 @@ export function Overview() {
         const startDate = new Date(weekKey)
 
         return {
-          name: formatWeekRange(startDate), // Format the week range for display
-          startDate: weekKey, // Keep the start date for sorting
-          total: ipSet.size,
+          name: formatWeekRange(startDate),
+          visitors: ipSet.size,
+          startDate: weekKey,
         }
       })
-      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime()) // Sort by start date
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
 
-    return weeklyData.slice(-12) // Display last 12 weeks
+    return weeklyData.slice(-12) // Last 12 weeks
   }
 
-  function processMonthlyUniqueVisitors(visitors: Visitor[]): ChartData[] {
+  function processMonthlyVisitors(visitors: Visitor[]): ChartData[] {
     const monthMap = new Map<string, Set<string>>()
 
     visitors.forEach((visitor) => {
       const visitDate = new Date(visitor.visit_time)
-      const startOfMonth = getStartOfMonth(visitDate) // Get the start of the month
-      const monthKey = startOfMonth.toISOString().split("T")[0] // Use ISO string as key
+      const monthKey = `${visitDate.getFullYear()}-${String(visitDate.getMonth() + 1).padStart(2, "0")}`
 
       if (!monthMap.has(monthKey)) {
         monthMap.set(monthKey, new Set())
@@ -140,20 +220,25 @@ export function Overview() {
 
     const monthlyData: ChartData[] = Array.from(monthMap.entries())
       .map(([monthKey, ipSet]) => {
-        const startDate = new Date(monthKey)
+        const [year, month] = monthKey.split("-")
+        const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
 
         return {
-          name: formatMonth(startDate), // Format the month for display
-          startDate: monthKey, // Keep the start date for sorting
-          total: ipSet.size,
+          name: formatMonth(date),
+          visitors: ipSet.size,
+          startDate: monthKey,
         }
       })
-      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime()) // Sort by start date
+      .sort((a, b) => {
+        const [aYear, aMonth] = a.startDate!.split("-")
+        const [bYear, bMonth] = b.startDate!.split("-")
+        return Number.parseInt(aYear) - Number.parseInt(bYear) || Number.parseInt(aMonth) - Number.parseInt(bMonth)
+      })
 
-    return monthlyData.slice(-12) // Display last 12 months
+    return monthlyData.slice(-12) // Last 12 months
   }
 
-  function processAnnualUniqueVisitors(visitors: Visitor[]): ChartData[] {
+  function processAnnualVisitors(visitors: Visitor[]): ChartData[] {
     const yearMap = new Map<string, Set<string>>()
 
     visitors.forEach((visitor) => {
@@ -170,23 +255,285 @@ export function Overview() {
     const annualData: ChartData[] = Array.from(yearMap.entries())
       .map(([year, ipSet]) => ({
         name: year,
-        total: ipSet.size,
+        visitors: ipSet.size,
+        startDate: year,
       }))
-      .sort((a, b) => parseInt(a.name) - parseInt(b.name))
+      .sort((a, b) => Number.parseInt(a.startDate!) - Number.parseInt(b.startDate!))
 
-    return annualData.slice(-5) // Display last 5 years
+    return annualData.slice(-5) // Last 5 years
+  }
+
+  // --- User Data Processing ---
+
+  function processDailyUsers(users: User[]): ChartData[] {
+    const dayMap = new Map<string, number>()
+
+    users.forEach((user) => {
+      const createdAt = new Date(user.Createdat)
+      const dayKey = createdAt.toISOString().split("T")[0] // YYYY-MM-DD format
+
+      dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + 1)
+    })
+
+    const dailyData: ChartData[] = Array.from(dayMap.entries())
+      .map(([dayKey, count]) => {
+        const date = new Date(dayKey)
+
+        return {
+          name: formatShortDate(date),
+          users: count,
+          startDate: dayKey,
+        }
+      })
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
+
+    return dailyData.slice(-14) // Last 14 days
+  }
+
+  function processWeeklyUsers(users: User[]): ChartData[] {
+    const weekMap = new Map<string, number>()
+
+    users.forEach((user) => {
+      const createdAt = new Date(user.Createdat)
+      const startOfWeek = getStartOfWeek(createdAt)
+      const weekKey = startOfWeek.toISOString().split("T")[0]
+
+      weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + 1)
+    })
+
+    const weeklyData: ChartData[] = Array.from(weekMap.entries())
+      .map(([weekKey, count]) => {
+        const startDate = new Date(weekKey)
+
+        return {
+          name: formatWeekRange(startDate),
+          users: count,
+          startDate: weekKey,
+        }
+      })
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
+
+    return weeklyData.slice(-12) // Last 12 weeks
+  }
+
+  function processMonthlyUsers(users: User[]): ChartData[] {
+    const monthMap = new Map<string, number>()
+
+    users.forEach((user) => {
+      const createdAt = new Date(user.Createdat)
+      const monthKey = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}`
+
+      monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1)
+    })
+
+    const monthlyData: ChartData[] = Array.from(monthMap.entries())
+      .map(([monthKey, count]) => {
+        const [year, month] = monthKey.split("-")
+        const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
+
+        return {
+          name: formatMonth(date),
+          users: count,
+          startDate: monthKey,
+        }
+      })
+      .sort((a, b) => {
+        const [aYear, aMonth] = a.startDate!.split("-")
+        const [bYear, bMonth] = b.startDate!.split("-")
+        return Number.parseInt(aYear) - Number.parseInt(bYear) || Number.parseInt(aMonth) - Number.parseInt(bMonth)
+      })
+
+    return monthlyData.slice(-12) // Last 12 months
+  }
+
+  function processAnnualUsers(users: User[]): ChartData[] {
+    const yearMap = new Map<string, number>()
+
+    users.forEach((user) => {
+      const createdAt = new Date(user.Createdat)
+      const year = createdAt.getFullYear().toString()
+
+      yearMap.set(year, (yearMap.get(year) || 0) + 1)
+    })
+
+    const annualData: ChartData[] = Array.from(yearMap.entries())
+      .map(([year, count]) => ({
+        name: year,
+        users: count,
+        startDate: year,
+      }))
+      .sort((a, b) => Number.parseInt(a.startDate!) - Number.parseInt(b.startDate!))
+
+    return annualData.slice(-5) // Last 5 years
+  }
+
+  // --- Comparison Data Processing ---
+
+  function processDailyComparison(visitors: Visitor[], users: User[]): ChartData[] {
+    const visitorData = processDailyVisitors(visitors)
+    const userData = processDailyUsers(users)
+
+    // Create a map of all dates
+    const allDates = new Map<string, ChartData>()
+
+    // Add visitor data to the map
+    visitorData.forEach((item) => {
+      allDates.set(item.startDate!, {
+        name: item.name,
+        visitors: item.visitors,
+        users: 0,
+        startDate: item.startDate,
+      })
+    })
+
+    // Add or merge user data
+    userData.forEach((item) => {
+      if (allDates.has(item.startDate!)) {
+        const existing = allDates.get(item.startDate!)!
+        existing.users = item.users
+      } else {
+        allDates.set(item.startDate!, {
+          name: item.name,
+          visitors: 0,
+          users: item.users,
+          startDate: item.startDate,
+        })
+      }
+    })
+
+    // Convert map to array and sort by date
+    return Array.from(allDates.values())
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
+      .slice(-14) // Last 14 days
+  }
+
+  function processWeeklyComparison(visitors: Visitor[], users: User[]): ChartData[] {
+    const visitorData = processWeeklyVisitors(visitors)
+    const userData = processWeeklyUsers(users)
+
+    // Create a map of all weeks
+    const allWeeks = new Map<string, ChartData>()
+
+    // Add visitor data to the map
+    visitorData.forEach((item) => {
+      allWeeks.set(item.startDate!, {
+        name: item.name,
+        visitors: item.visitors,
+        users: 0,
+        startDate: item.startDate,
+      })
+    })
+
+    // Add or merge user data
+    userData.forEach((item) => {
+      if (allWeeks.has(item.startDate!)) {
+        const existing = allWeeks.get(item.startDate!)!
+        existing.users = item.users
+      } else {
+        allWeeks.set(item.startDate!, {
+          name: item.name,
+          visitors: 0,
+          users: item.users,
+          startDate: item.startDate,
+        })
+      }
+    })
+
+    // Convert map to array and sort by date
+    return Array.from(allWeeks.values())
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())
+      .slice(-12) // Last 12 weeks
+  }
+
+  function processMonthlyComparison(visitors: Visitor[], users: User[]): ChartData[] {
+    const visitorData = processMonthlyVisitors(visitors)
+    const userData = processMonthlyUsers(users)
+
+    // Create a map of all months
+    const allMonths = new Map<string, ChartData>()
+
+    // Add visitor data to the map
+    visitorData.forEach((item) => {
+      allMonths.set(item.startDate!, {
+        name: item.name,
+        visitors: item.visitors,
+        users: 0,
+        startDate: item.startDate,
+      })
+    })
+
+    // Add or merge user data
+    userData.forEach((item) => {
+      if (allMonths.has(item.startDate!)) {
+        const existing = allMonths.get(item.startDate!)!
+        existing.users = item.users
+      } else {
+        allMonths.set(item.startDate!, {
+          name: item.name,
+          visitors: 0,
+          users: item.users,
+          startDate: item.startDate,
+        })
+      }
+    })
+
+    // Convert map to array and sort by date
+    return Array.from(allMonths.values())
+      .sort((a, b) => {
+        const [aYear, aMonth] = a.startDate!.split("-")
+        const [bYear, bMonth] = b.startDate!.split("-")
+        return Number.parseInt(aYear) - Number.parseInt(bYear) || Number.parseInt(aMonth) - Number.parseInt(bMonth)
+      })
+      .slice(-12) // Last 12 months
+  }
+
+  function processAnnualComparison(visitors: Visitor[], users: User[]): ChartData[] {
+    const visitorData = processAnnualVisitors(visitors)
+    const userData = processAnnualUsers(users)
+
+    // Create a map of all years
+    const allYears = new Map<string, ChartData>()
+
+    // Add visitor data to the map
+    visitorData.forEach((item) => {
+      allYears.set(item.startDate!, {
+        name: item.name,
+        visitors: item.visitors,
+        users: 0,
+        startDate: item.startDate,
+      })
+    })
+
+    // Add or merge user data
+    userData.forEach((item) => {
+      if (allYears.has(item.startDate!)) {
+        const existing = allYears.get(item.startDate!)!
+        existing.users = item.users
+      } else {
+        allYears.set(item.startDate!, {
+          name: item.name,
+          visitors: 0,
+          users: item.users,
+          startDate: item.startDate,
+        })
+      }
+    })
+
+    // Convert map to array and sort by year
+    return Array.from(allYears.values())
+      .sort((a, b) => Number.parseInt(a.startDate!) - Number.parseInt(b.startDate!))
+      .slice(-5) // Last 5 years
   }
 
   // --- Helper Functions ---
 
   function getStartOfWeek(date: Date): Date {
-    const day = date.getDay()
-    const diff = date.getDate() - day
-    return new Date(date.setDate(diff))
-  }
-
-  function getStartOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), 1)
+    const result = new Date(date)
+    const day = result.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const diff = result.getDate() - day // Adjust to get to Sunday
+    result.setDate(diff)
+    result.setHours(0, 0, 0, 0)
+    return result
   }
 
   function formatShortDate(date: Date): string {
@@ -205,14 +552,14 @@ export function Overview() {
     return `${startMonth} ${startDay} - ${endMonth} ${endDay}`
   }
 
-  function formatMonth(startDate: Date): string {
-    return startDate.toLocaleString("default", { month: "long", year: "numeric" })
+  function formatMonth(date: Date): string {
+    return date.toLocaleString("default", { month: "long", year: "numeric" })
   }
 
   // --- Render ---
 
   if (loading) {
-    return <div className="flex justify-center items-center h-[350px]">Loading visitor data...</div>
+    return <div className="flex justify-center items-center h-[350px]">Loading data...</div>
   }
 
   if (error) {
@@ -221,52 +568,69 @@ export function Overview() {
 
   return (
     <div>
-      {/* Time Period Selector */}
-      <div className="mb-4">
-        <label htmlFor="timePeriod" className="mr-2">
-          View:
-        </label>
-        <select
-          id="timePeriod"
-          className="border rounded px-2 py-1"
-          value={timePeriod}
-          onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
-        >
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="annual">Annual</option>
-        </select>
+      {/* Selectors */}
+      <div className="mb-4 flex gap-4">
+        <div>
+          <label htmlFor="dataType" className="mr-2">
+            Data Type:
+          </label>
+          <select
+            id="dataType"
+            className="border rounded px-2 py-1"
+            value={dataType}
+            onChange={(e) => setDataType(e.target.value as DataType)}
+          >
+            <option value="visitors">Visitors</option>
+            <option value="users">Users</option>
+            <option value="comparison">Comparison</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="timePeriod" className="mr-2">
+            Time Period:
+          </label>
+          <select
+            id="timePeriod"
+            className="border rounded px-2 py-1"
+            value={timePeriod}
+            onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+          >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
       </div>
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={chartData}>
-          <XAxis
-            dataKey="name"
-            stroke="#888888"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-          <Tooltip
-            formatter={(value) => [`${value} unique visitors`, "Total"]}
-            labelFormatter={(label, data) => {
-              if (data && data[0]) {
-                if (timePeriod === "weekly" && data[0].payload.startDate) {
-                  return `Week of ${data[0].payload.startDate}`
-                } else if (timePeriod === "monthly" && data[0].payload.startDate) {
-                  return `${data[0].payload.name}` // Display the full month name
-                }
-                return `${data[0].payload.name}`
-              }
-              return label
-            }}
-          />
-          <Bar dataKey="total" fill="#004D4D" radius={[4, 4, 0, 0]} name="Unique Visitors" />
-        </BarChart>
+        {dataType === "comparison" ? (
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="visitors" stroke="#004D4D" activeDot={{ r: 8 }} name="Unique Visitors" />
+            <Line type="monotone" dataKey="users" stroke="#82ca9d" name="Users" />
+          </LineChart>
+        ) : (
+          <BarChart data={chartData}>
+            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis
+              stroke="#888888"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `${value}`}
+            />
+            <Tooltip
+              formatter={(value) => [`${value} ${dataType === "visitors" ? "unique visitors" : "users"}`, "Total"]}
+            />
+            <Bar dataKey={dataType} fill="#004D4D" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        )}
       </ResponsiveContainer>
     </div>
   )
