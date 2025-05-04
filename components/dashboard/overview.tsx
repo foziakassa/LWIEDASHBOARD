@@ -1,140 +1,3 @@
-// "use client"
-
-// import { useEffect, useState } from "react"
-// import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
-
-// interface Visitor {
-//   ip_address: string
-//   visit_time: string
-// }
-
-// interface DailyData {
-//   name: string
-//   total: number
-//   fullDate: string
-// }
-
-// export function Overview() {
-//   const [dailyData, setDailyData] = useState<DailyData[]>([])
-//   const [loading, setLoading] = useState(true)
-//   const [error, setError] = useState<string | null>(null)
-
-//   useEffect(() => {
-//     async function fetchVisitorData() {
-//       try {
-//         setLoading(true)
-//         const response = await fetch("https://liwedoc.vercel.app/visitors")
-
-//         if (!response.ok) {
-//           throw new Error("Failed to fetch visitor data")
-//         }
-
-//         const visitors: Visitor[] = await response.json()
-
-//         // Process visitors into daily unique counts
-//         const dailyVisitors = processDailyUniqueVisitors(visitors)
-//         setDailyData(dailyVisitors)
-//       } catch (err) {
-//         console.error("Error fetching visitor data:", err)
-//         setError("Failed to load visitor data")
-//       } finally {
-//         setLoading(false)
-//       }
-//     }
-
-//     fetchVisitorData()
-//   }, [])
-
-//   // Function to process visitors into daily unique counts
-//   function processDailyUniqueVisitors(visitors: Visitor[]): DailyData[] {
-//     // Group visitors by day
-//     const dayMap = new Map<string, Set<string>>()
-
-//     visitors.forEach((visitor) => {
-//       const visitDate = new Date(visitor.visit_time)
-//       const dayKey = visitDate.toISOString().split("T")[0] // YYYY-MM-DD format
-
-//       if (!dayMap.has(dayKey)) {
-//         dayMap.set(dayKey, new Set())
-//       }
-
-//       // Add IP to the set for this day (sets only store unique values)
-//       dayMap.get(dayKey)?.add(visitor.ip_address)
-//     })
-
-//     // Convert map to array for chart data
-//     const dailyData: DailyData[] = Array.from(dayMap.entries())
-//       .map(([dayKey, ipSet]) => {
-//         const date = new Date(dayKey)
-
-//         return {
-//           name: formatShortDate(date),
-//           fullDate: formatFullDate(date),
-//           total: ipSet.size, // Number of unique IPs
-//         }
-//       })
-//       .sort((a, b) => {
-//         // Sort by date
-//         return new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime()
-//       })
-
-//     // Take the last 14 days if we have more data
-//     return dailyData.slice(-14)
-//   }
-
-//   // Helper function to format date as MM/DD
-//   function formatShortDate(date: Date): string {
-//     return `${date.getMonth() + 1}/${date.getDate()}`
-//   }
-
-//   // Helper function to format full date
-//   function formatFullDate(date: Date): string {
-//     return date.toLocaleDateString("en-US", {
-//       weekday: "short",
-//       month: "short",
-//       day: "numeric",
-//       year: "numeric",
-//     })
-//   }
-
-//   if (loading) {
-//     return <div className="flex justify-center items-center h-[350px]">Loading visitor data...</div>
-//   }
-
-//   if (error) {
-//     return <div className="flex justify-center items-center h-[350px] text-red-500">{error}</div>
-//   }
-
-//   return (
-//     <ResponsiveContainer width="100%" height={350}>
-//       <BarChart data={dailyData}>
-//         <XAxis
-//           dataKey="name"
-//           stroke="#888888"
-//           fontSize={12}
-//           tickLine={false}
-//           axisLine={false}
-//           interval={0} // Show all labels
-//         />
-//         <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-//         <Tooltip
-//           formatter={(value) => [`${value} unique visitors`, "Total"]}
-//           labelFormatter={(label, data) => {
-//             if (data && data[0]) {
-//               return data[0].payload.fullDate
-//             }
-//             return label
-//           }}
-//         />
-//         <Bar dataKey="total" fill="#004D4D" radius={[4, 4, 0, 0]} name="Unique Visitors" />
-//       </BarChart>
-//     </ResponsiveContainer>
-//   )
-
-
-// }
-
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -145,14 +8,17 @@ interface Visitor {
   visit_time: string
 }
 
-interface WeeklyData {
+interface ChartData {
   name: string
   total: number
-  startDate: string // ISO string for the start of the week
+  startDate?: string // ISO string for the start of the period (optional)
 }
 
+type TimePeriod = "daily" | "weekly" | "monthly" | "annual"
+
 export function Overview() {
-  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([])
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly") // Default to monthly
+  const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -168,9 +34,24 @@ export function Overview() {
 
         const visitors: Visitor[] = await response.json()
 
-        // Process visitors into weekly unique counts
-        const weeklyVisitors = processWeeklyUniqueVisitors(visitors)
-        setWeeklyData(weeklyVisitors)
+        // Process visitors based on the selected time period
+        let processedData: ChartData[] = []
+        switch (timePeriod) {
+          case "daily":
+            processedData = processDailyUniqueVisitors(visitors)
+            break
+          case "weekly":
+            processedData = processWeeklyUniqueVisitors(visitors)
+            break
+          case "monthly":
+            processedData = processMonthlyUniqueVisitors(visitors)
+            break
+          case "annual":
+            processedData = processAnnualUniqueVisitors(visitors)
+            break
+        }
+
+        setChartData(processedData)
       } catch (err) {
         console.error("Error fetching visitor data:", err)
         setError("Failed to load visitor data")
@@ -180,10 +61,39 @@ export function Overview() {
     }
 
     fetchVisitorData()
-  }, [])
+  }, [timePeriod]) // Re-fetch data when the time period changes
 
-  // Function to process visitors into weekly unique counts
-  function processWeeklyUniqueVisitors(visitors: Visitor[]): WeeklyData[] {
+  // --- Data Processing Functions ---
+
+  function processDailyUniqueVisitors(visitors: Visitor[]): ChartData[] {
+    const dayMap = new Map<string, Set<string>>()
+
+    visitors.forEach((visitor) => {
+      const visitDate = new Date(visitor.visit_time)
+      const dayKey = visitDate.toISOString().split("T")[0] // YYYY-MM-DD format
+
+      if (!dayMap.has(dayKey)) {
+        dayMap.set(dayKey, new Set())
+      }
+
+      dayMap.get(dayKey)?.add(visitor.ip_address)
+    })
+
+    const dailyData: ChartData[] = Array.from(dayMap.entries())
+      .map(([dayKey, ipSet]) => {
+        const date = new Date(dayKey)
+
+        return {
+          name: formatShortDate(date),
+          total: ipSet.size,
+        }
+      })
+      .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
+
+    return dailyData.slice(-14)
+  }
+
+  function processWeeklyUniqueVisitors(visitors: Visitor[]): ChartData[] {
     const weekMap = new Map<string, Set<string>>()
 
     visitors.forEach((visitor) => {
@@ -198,7 +108,7 @@ export function Overview() {
       weekMap.get(weekKey)?.add(visitor.ip_address)
     })
 
-    const weeklyData: WeeklyData[] = Array.from(weekMap.entries())
+    const weeklyData: ChartData[] = Array.from(weekMap.entries())
       .map(([weekKey, ipSet]) => {
         const startDate = new Date(weekKey)
 
@@ -208,22 +118,84 @@ export function Overview() {
           total: ipSet.size,
         }
       })
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()) // Sort by start date
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime()) // Sort by start date
 
     return weeklyData.slice(-12) // Display last 12 weeks
   }
 
-  // Function to get the start of the week (Sunday)
-  function getStartOfWeek(date: Date): Date {
-    const day = date.getDay() // 0 for Sunday, 1 for Monday, etc.
-    const diff = date.getDate() - day
-    return new Date(date.setDate(diff)) // Adjust back to Sunday
+  function processMonthlyUniqueVisitors(visitors: Visitor[]): ChartData[] {
+    const monthMap = new Map<string, Set<string>>()
+
+    visitors.forEach((visitor) => {
+      const visitDate = new Date(visitor.visit_time)
+      const startOfMonth = getStartOfMonth(visitDate) // Get the start of the month
+      const monthKey = startOfMonth.toISOString().split("T")[0] // Use ISO string as key
+
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, new Set())
+      }
+
+      monthMap.get(monthKey)?.add(visitor.ip_address)
+    })
+
+    const monthlyData: ChartData[] = Array.from(monthMap.entries())
+      .map(([monthKey, ipSet]) => {
+        const startDate = new Date(monthKey)
+
+        return {
+          name: formatMonth(startDate), // Format the month for display
+          startDate: monthKey, // Keep the start date for sorting
+          total: ipSet.size,
+        }
+      })
+      .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime()) // Sort by start date
+
+    return monthlyData.slice(-12) // Display last 12 months
   }
 
-  // Function to format the week range
+  function processAnnualUniqueVisitors(visitors: Visitor[]): ChartData[] {
+    const yearMap = new Map<string, Set<string>>()
+
+    visitors.forEach((visitor) => {
+      const visitDate = new Date(visitor.visit_time)
+      const year = visitDate.getFullYear().toString()
+
+      if (!yearMap.has(year)) {
+        yearMap.set(year, new Set())
+      }
+
+      yearMap.get(year)?.add(visitor.ip_address)
+    })
+
+    const annualData: ChartData[] = Array.from(yearMap.entries())
+      .map(([year, ipSet]) => ({
+        name: year,
+        total: ipSet.size,
+      }))
+      .sort((a, b) => parseInt(a.name) - parseInt(b.name))
+
+    return annualData.slice(-5) // Display last 5 years
+  }
+
+  // --- Helper Functions ---
+
+  function getStartOfWeek(date: Date): Date {
+    const day = date.getDay()
+    const diff = date.getDate() - day
+    return new Date(date.setDate(diff))
+  }
+
+  function getStartOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), 1)
+  }
+
+  function formatShortDate(date: Date): string {
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }
+
   function formatWeekRange(startDate: Date): string {
     const endDate = new Date(startDate)
-    endDate.setDate(startDate.getDate() + 6) // Add 6 days to get the end of the week
+    endDate.setDate(startDate.getDate() + 6)
 
     const startMonth = startDate.toLocaleString("default", { month: "short" })
     const startDay = startDate.getDate()
@@ -232,6 +204,12 @@ export function Overview() {
 
     return `${startMonth} ${startDay} - ${endMonth} ${endDay}`
   }
+
+  function formatMonth(startDate: Date): string {
+    return startDate.toLocaleString("default", { month: "long", year: "numeric" })
+  }
+
+  // --- Render ---
 
   if (loading) {
     return <div className="flex justify-center items-center h-[350px]">Loading visitor data...</div>
@@ -242,28 +220,54 @@ export function Overview() {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={weeklyData}>
-        <XAxis
-          dataKey="name"
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          interval={0}
-        />
-        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-        <Tooltip
-          formatter={(value) => [`${value} unique visitors`, "Total"]}
-          labelFormatter={(label, data) => {
-            if (data && data[0]) {
-              return `Week of ${data[0].payload.startDate}`
-            }
-            return label
-          }}
-        />
-        <Bar dataKey="total" fill="#004D4D" radius={[4, 4, 0, 0]} name="Unique Visitors" />
-      </BarChart>
-    </ResponsiveContainer>
+    <div>
+      {/* Time Period Selector */}
+      <div className="mb-4">
+        <label htmlFor="timePeriod" className="mr-2">
+          View:
+        </label>
+        <select
+          id="timePeriod"
+          className="border rounded px-2 py-1"
+          value={timePeriod}
+          onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={350}>
+        <BarChart data={chartData}>
+          <XAxis
+            dataKey="name"
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            interval={0}
+          />
+          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+          <Tooltip
+            formatter={(value) => [`${value} unique visitors`, "Total"]}
+            labelFormatter={(label, data) => {
+              if (data && data[0]) {
+                if (timePeriod === "weekly" && data[0].payload.startDate) {
+                  return `Week of ${data[0].payload.startDate}`
+                } else if (timePeriod === "monthly" && data[0].payload.startDate) {
+                  return `${data[0].payload.name}` // Display the full month name
+                }
+                return `${data[0].payload.name}`
+              }
+              return label
+            }}
+          />
+          <Bar dataKey="total" fill="#004D4D" radius={[4, 4, 0, 0]} name="Unique Visitors" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
