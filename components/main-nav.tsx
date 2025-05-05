@@ -48,6 +48,8 @@ const mainNav = [
     title: "Charity",
     href: "/admin/charity",
     icon: Gift,
+    showForRoles: ["Manager"], // Only show for "Admin" role (uppercase)
+
   },
   {
     title: "Advertisment",

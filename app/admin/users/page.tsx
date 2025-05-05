@@ -14,6 +14,7 @@ import axiosInstance from "@/shared/axiosinstance"
 import NewUser from "../newuser/page"
 import { useRouter } from "next/navigation"
 import { Alert } from "@/components/ui/alert"
+import { getUserCookie } from "@/lib/cookies"
 
 
 
@@ -52,6 +53,13 @@ export default function UsersPage() {
     const date = new Date(dateString);
     return date.toLocaleDateString(undefined, options); // Format date as MM/DD/YYYY
   };
+const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+
+  // Get user role from cookie
+  useEffect(() => {
+    const userData = getUserCookie(); // Get the user data object
+    setUserRole(userData?.Role || null); // Access the Role property
+  }, []);
 
 
   useEffect(() => {
