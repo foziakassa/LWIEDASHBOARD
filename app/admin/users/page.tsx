@@ -53,6 +53,8 @@ export default function UsersPage() {
     const date = new Date(dateString);
     return date.toLocaleDateString(undefined, options); // Format date as MM/DD/YYYY
   };
+
+  /// geting user info from cookie
 const [userRole, setUserRole] = useState<string | null>(null); // State for user role
 
   // Get user role from cookie
@@ -207,10 +209,10 @@ const [userRole, setUserRole] = useState<string | null>(null); // State for user
         return <Badge className={badgeClass}>{status}</Badge>
       },
     },
-    {
-      accessorKey: "lastLogin",
-      header: "Last Login",
-    },
+    // {
+    //   accessorKey: "lastLogin",
+    //   header: "Last Login",
+    // },
     {
       accessorKey: "joinDate",
       header: "Join Date",
@@ -221,16 +223,28 @@ const [userRole, setUserRole] = useState<string | null>(null); // State for user
         const user = row.original
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="Edit">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button onClick={()=>{
-               handleDeleteUser(user.id)
-             
-            }}
-            variant="ghost" size="icon" title="Delete">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+
+            {/* // role based acces */}
+            {userRole !=='Manager' && (
+               <Button variant="ghost" size="icon" title="Edit">
+               <Pencil className="h-4 w-4" />
+             </Button>
+
+            )}
+           
+            {/* // role based acces */}
+
+            {userRole !== "Manager" && (
+               <Button onClick={()=>{
+                handleDeleteUser(user.id)
+              
+             }}
+             variant="ghost" size="icon" title="Delete">
+               <Trash2 className="h-4 w-4" />
+             </Button>
+
+            )}
+           
             <Button onClick={() => router.push(`/admin/userinfo/${user.id}`)} variant="ghost" size="icon" title="View Details">
           <ChevronRight className="h-4 w-4" />
         </Button>

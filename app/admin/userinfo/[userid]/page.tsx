@@ -318,12 +318,12 @@ const UserInfoPage = () => {
           )}
 
           {/* Action buttons */}
-          <div className="mt-8 flex gap-3 justify-end">
+          {/* <div className="mt-8 flex gap-3 justify-end">
             <Button variant="outline">Edit Profile</Button>
             <Button variant="default" className="bg-teal-600 hover:bg-teal-700">
               Contact User
-            </Button>
-          </div>
+            </Button> */}
+          {/* </div> */}
         </div>
       </Card>
     </div>
