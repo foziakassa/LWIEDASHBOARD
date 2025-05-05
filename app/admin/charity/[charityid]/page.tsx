@@ -290,7 +290,7 @@ const CharityInfoPage = () => {
 
           {/* Action buttons */}
           <div className="mt-8 flex gap-3 justify-end">
-            {userRole !== "Manager" && (
+            {userRole !== "Admin" && (
                <Button
                variant="outline"
                className="text-red-500 border-red-200 hover:bg-red-50"

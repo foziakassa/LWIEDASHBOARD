@@ -114,7 +114,7 @@ export default function CharityPage() {
                   id: "actions",
                   cell: ({ row }) => (
                     <div className="flex items-center gap-4">
-                      {userRole !== "Manager" && (
+                      {userRole !== "Admin" && (
                          <Button
                          onClick={() => router.push(`/admin/charity/edit/${row.original.id}`)}
                          variant="ghost"
@@ -127,7 +127,7 @@ export default function CharityPage() {
 
                       )}
                       
-                     {userRole !== "Manager" && (
+                     {userRole !== "Admin" && (
                        <Button
                        onClick={() => handleDeleteCharity(row.original.id)}
                        variant="ghost"
