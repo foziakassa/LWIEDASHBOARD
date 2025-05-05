@@ -14,6 +14,7 @@ import axiosInstance from "@/shared/axiosinstance";
 // import NewUser from "../newuser/page";
 import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
+import { getUserCookie } from "@/lib/cookies";
 
 interface Advertisement {
   id: string;
@@ -33,6 +34,14 @@ export default function AdvertisementsPage() {
   const [filteredAdvertisements, setFilteredAdvertisements] = useState<Advertisement[]>([]);
   const [approvedFilter, setApprovedFilter] = useState("all"); // "all", "true", "false"
   const [customFields, setCustomFields] = useState<any[]>([]);
+  /// geting user info from cookie
+      const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+      
+        // Get user role from cookie
+        useEffect(() => {
+          const userData = getUserCookie(); // Get the user data object
+          setUserRole(userData?.Role || null); // Access the Role property
+        }, []);
 
   useEffect(() => {
     const fetchAdvertisements = async () => {
@@ -135,27 +144,39 @@ export default function AdvertisementsPage() {
         const advertisement = row.original;
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="Edit">
+            {userRole !== "Admin" && (
+              <Button variant="ghost" size="icon" title="Edit">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button
-              onClick={() => {
-                handleDeleteAdvertisement(advertisement.id);
-              }}
-              variant="ghost"
-              size="icon"
-              title="Delete"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={() => router.push(`/admin/advertisements/${advertisement.id}`)}
-              variant="ghost"
-              size="icon"
-              title="View Details"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+
+            )}
+            
+            {userRole !== "Admin" && (
+               <Button
+               onClick={() => {
+                 handleDeleteAdvertisement(advertisement.id);
+               }}
+               variant="ghost"
+               size="icon"
+               title="Delete"
+             >
+               <Trash2 className="h-4 w-4" />
+             </Button>
+
+            )}
+            {userRole !== "Admin" && (
+               <Button
+               onClick={() => router.push(`/admin/advertisements/${advertisement.id}`)}
+               variant="ghost"
+               size="icon"
+               title="View Details"
+             >
+               <ChevronRight className="h-4 w-4" />
+             </Button>
+
+            )}
+           
+           
           </div>
         );
       },

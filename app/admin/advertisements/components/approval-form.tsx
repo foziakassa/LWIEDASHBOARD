@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, DollarSign, Calendar } from "lucide-react"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { getUserCookie } from "@/lib/cookies"
 
 interface PaymentApprovalFormProps {
   id: string
@@ -20,6 +21,15 @@ export function PaymentApprovalForm({ id, showCard = true }: PaymentApprovalForm
   const [paymentAmount, setPaymentAmount] = useState("")
   const [paymentDuration, setPaymentDuration] = useState("1week")
   const router = useRouter()
+
+  // geting user info from cookie
+        const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+        
+          // Get user role from cookie
+          useEffect(() => {
+            const userData = getUserCookie(); // Get the user data object
+            setUserRole(userData?.Role || null); // Access the Role property
+          }, []);
 
   const handleApprove = async () => {
     if (!paymentAmount || Number.parseFloat(paymentAmount) <= 0) {
