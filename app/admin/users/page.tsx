@@ -209,10 +209,7 @@ const [userRole, setUserRole] = useState<string | null>(null); // State for user
         return <Badge className={badgeClass}>{status}</Badge>
       },
     },
-    // {
-    //   accessorKey: "lastLogin",
-    //   header: "Last Login",
-    // },
+    
     {
       accessorKey: "joinDate",
       header: "Join Date",
@@ -258,15 +255,21 @@ const [userRole, setUserRole] = useState<string | null>(null); // State for user
     <div className="space-y-4 p-4 md:p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Users</h1>
-        <div className="flex gap-2">
-          <Button onClick={()=>{
-           router.push('/admin/newuser'); // redirect to users list page
-            
-          }}>
-            <Plus className="mr-2 h-4 w-4" /> Add User
-          </Button>
-          <FieldAdder onAddField={handleAddField} entityName="Users" />
+        
+          {userRole !== "Manager" && (
+            <div className="flex gap-2">
+             <Button onClick={()=>{
+              router.push('/admin/newuser'); // redirect to users list page
+               
+             }}>
+               <Plus className="mr-2 h-4 w-4" /> Add User
+             </Button>
+             {/* <FieldAdder onAddField={handleAddField} entityName="Users" /> */}
         </div>
+
+          )}
+         
+          
       </div>
 
       <Card>
