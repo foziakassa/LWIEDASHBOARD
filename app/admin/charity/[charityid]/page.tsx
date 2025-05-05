@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MapPin, Calendar, Info, Heart, AlertCircle, Edit, Trash2, ArrowLeft } from "lucide-react"
 import axiosInstance from "@/shared/axiosinstance"
+import { getUserCookie } from "@/lib/cookies"
 
 interface Charity {
   id: string
@@ -36,6 +37,18 @@ const CharityInfoPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [useMockData, setUseMockData] = useState(false)
+
+  /// geting user info from cookie
+    const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+    
+      // Get user role from cookie
+      useEffect(() => {
+        const userData = getUserCookie(); // Get the user data object
+        setUserRole(userData?.Role || null); // Access the Role property
+      }, []);
+    
+    
+  
 
   useEffect(() => {
     fetchCharity()
@@ -277,21 +290,25 @@ const CharityInfoPage = () => {
 
           {/* Action buttons */}
           <div className="mt-8 flex gap-3 justify-end">
-            <Button
-              variant="outline"
-              className="text-red-500 border-red-200 hover:bg-red-50"
-              onClick={handleDeleteCharity}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-            <Button variant="outline" onClick={() => router.push(`/admin/charity/edit/${charity.id}`)}>
+            {userRole !== "Manager" && (
+               <Button
+               variant="outline"
+               className="text-red-500 border-red-200 hover:bg-red-50"
+               onClick={handleDeleteCharity}
+             >
+               <Trash2 className="h-4 w-4 mr-2" />
+               Delete
+             </Button>
+
+            )}
+           
+            {/* <Button variant="outline" onClick={() => router.push(`/admin/charity/edit/${charity.id}`)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
             <Button variant="outline" className="bg-teal-600 hover:bg-teal-700">
               View Campaigns
-            </Button>
+            </Button> */}
           </div>
         </div>
       </Card>

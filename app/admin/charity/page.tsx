@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
-import { Trash2, Plus, Edit, Info } from "lucide-react" // Added Info icon
+import { Trash2, Plus, Edit, Info, ChevronRight, Pencil } from "lucide-react" // Added Info icon
 import axiosInstance from "@/shared/axiosinstance"
 import { useRouter } from "next/navigation"
+import { getUserCookie } from "@/lib/cookies"
 
 interface Charity {
   id: string
@@ -21,6 +22,18 @@ export default function CharityPage() {
   const router = useRouter()
   const [charities, setCharities] = useState<Charity[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+
+  
+    /// geting user info from cookie
+  const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+  
+    // Get user role from cookie
+    useEffect(() => {
+      const userData = getUserCookie(); // Get the user data object
+      setUserRole(userData?.Role || null); // Access the Role property
+    }, []);
+  
+  
 
   useEffect(() => {
     const fetchCharities = async () => {
@@ -101,29 +114,38 @@ export default function CharityPage() {
                   id: "actions",
                   cell: ({ row }) => (
                     <div className="flex items-center gap-4">
+                      {userRole !== "Manager" && (
+                         <Button
+                         onClick={() => router.push(`/admin/charity/edit/${row.original.id}`)}
+                         variant="ghost"
+                         size="icon"
+                         title="Edit"
+                       >
+                         <Pencil
+                          className="h-4 w-4" />
+                       </Button>
+
+                      )}
+                      
+                     {userRole !== "Manager" && (
+                       <Button
+                       onClick={() => handleDeleteCharity(row.original.id)}
+                       variant="ghost"
+                       size="icon"
+                       title="Delete"
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+
+                     )}
+                     
                       <Button
                         onClick={() => router.push(`/admin/charity/${row.original.id}`)}
                         variant="ghost"
                         size="icon"
-                        title="View Info"
+                        title="View Details"
                       >
-                        <Info className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={() => router.push(`/admin/charity/edit/${row.original.id}`)}
-                        variant="ghost"
-                        size="icon"
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteCharity(row.original.id)}
-                        variant="ghost"
-                        size="icon"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                   ),
