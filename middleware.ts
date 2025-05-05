@@ -2,64 +2,34 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const cookies = request.cookies
+  // Get the user cookie
+  const userCookie = request.cookies.get("user")
 
-  // Get auth token and user role from cookies
-  const authToken = cookies.get("authToken")?.value
-  const userRole = cookies.get("userRole")?.value
-
-  // Redirect root to admin dashboard by default if authenticated
-  if (pathname === "/login") {
-    if (!authToken) {
+  // Check if the path starts with /admin
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    // If no user cookie exists, redirect to login
+    if (!userCookie) {
       return NextResponse.redirect(new URL("/login", request.url))
     }
 
-    if (userRole === "admin") {
-      return NextResponse.redirect(new URL("/admin", request.url))
-    } else if (userRole === "manager") {
-      return NextResponse.redirect(new URL("/manager", request.url))
-    } else {
-      // If role is unknown but authenticated, default to login
+    try {
+      // Parse the user data
+      const userData = JSON.parse(decodeURIComponent(userCookie.value))
+
+      // Check if user has Admin or Manager role
+      if (userData.Role !== "Admin" && userData.Role !== "Manager") {
+        return NextResponse.redirect(new URL("/login", request.url))
+      }
+    } catch (error) {
+      // If there's an error parsing the cookie, redirect to login
       return NextResponse.redirect(new URL("/login", request.url))
     }
-  }
-
-  // Handle access control for admin routes
-  if (pathname.startsWith("/admin")) {
-    // If not authenticated, redirect to login
-    if (!authToken) {
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-
-    // If not admin, redirect to unauthorized
-    if (userRole !== "admin") {
-      return NextResponse.redirect(new URL("/unauthorized", request.url))
-    }
-  }
-
-  // Handle access control for manager routes
-  if (pathname.startsWith("/manager")) {
-    // If not authenticated, redirect to login
-    if (!authToken) {
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-
-    // If not manager, redirect to unauthorized
-    if (userRole !== "manager") {
-      return NextResponse.redirect(new URL("/unauthorized", request.url))
-    }
-  }
-
-  // Redirect removed pages (from previous requirements)
-  if (pathname === "/admin/purchase-order" || pathname === "/admin/template/measurement") {
-    return NextResponse.redirect(new URL("/admin", request.url))
   }
 
   return NextResponse.next()
 }
 
+// Configure the middleware to run on specific paths
 export const config = {
-  matcher: ["/", "/admin/:path*", "/manager/:path*", "/admin/purchase-order", "/admin/template/measurement"],
+  matcher: ["/admin/:path*"],
 }
-
