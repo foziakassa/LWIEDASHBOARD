@@ -217,7 +217,7 @@ const UserInfoPage = () => {
     <div className="p-4 max-w-3xl mx-auto">
       <Card className="overflow-hidden border-0 shadow-lg">
         {/* Header with background */}
-        <div className="bg-gradient-to-r from-teal-200 to-teal-600 h-32 relative">
+        <div className="bg-gradient-to-r from-teal-200 to-teal-600 h-40 relative">
           <Button
             onClick={() => router.push("/admin/users")}
             variant="outline"
@@ -228,10 +228,10 @@ const UserInfoPage = () => {
         </div>
 
         {/* Profile content */}
-        <div className="px-6 pb-6 -mt-16">
+        <div className="px-6 pb-6 -mt-20">
           {/* Profile image */}
           <div className="flex flex-col items-center mb-6">
-            <div className="h-32 w-32 rounded-full border-4 border-white overflow-hidden bg-white shadow-md">
+            <div className="h-32 w-32 rounded-full border-4 border-white overflow-hidden bg-white shadow-md relative z-10">
               <img
                 src={user?.image || "/placeholder.svg?height=128&width=128"}
                 alt={`${user?.firstName} ${user?.lastName}`}
@@ -317,13 +317,7 @@ const UserInfoPage = () => {
             </div>
           )}
 
-          {/* Action buttons */}
-          {/* <div className="mt-8 flex gap-3 justify-end">
-            <Button variant="outline">Edit Profile</Button>
-            <Button variant="default" className="bg-teal-600 hover:bg-teal-700">
-              Contact User
-            </Button> */}
-          {/* </div> */}
+          
         </div>
       </Card>
     </div>
