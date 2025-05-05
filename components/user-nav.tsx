@@ -14,10 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { getUserCookie } from "@/lib/cookies"
 
 export function UserNav() {
   const router = useRouter()
   const pathname = usePathname()
+  const [user, setUser] = useState<any | null>(null)
+
+  useEffect(() => {
+    const userData = getUserCookie()
+    setUser(userData)
+  }, [])
 
   // Determine if we're in the admin or manager section
   const isAdmin = pathname.startsWith("/admin")
@@ -25,15 +33,20 @@ export function UserNav() {
   const settingsPath = isAdmin ? "/admin/settings" : "/manager/settings"
 
   const getUserInitials = () => {
-    return "SJ"
+    if (!user) return "Loading..."
+    return `${user.Firstname ? user.Firstname.charAt(0).toUpperCase() : ''}${user.lastname ? user.lastname.charAt(0).toUpperCase() : ''}`
   }
+
+  const userName = user ? `${user.Firstname} ${user.lastname}` : "Loading..."
+  const userEmail = user ? user.Email : "Loading..."
+  const userAvatar = user ? user.Image || "/placeholder.svg?height=32&width=32" : "/placeholder.svg?height=32&width=32"
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User avatar" className="object-cover" />
+            <AvatarImage src={userAvatar} alt="User avatar" className="object-cover" />
             <AvatarFallback>{getUserInitials()}</AvatarFallback>
           </Avatar>
         </Button>
@@ -41,8 +54,8 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Sarah Johnson</p>
-            <p className="text-xs leading-none text-muted-foreground">sarah.johnson@example.com</p>
+            <p className="text-sm font-medium leading-none">{userName}</p>
+            <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -68,4 +81,3 @@ export function UserNav() {
     </DropdownMenu>
   )
 }
-

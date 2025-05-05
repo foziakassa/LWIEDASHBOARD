@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FieldAdder } from "@/components/field-adder";
 import { Separator } from "@/components/ui/separator";
 import axiosInstance from "@/shared/axiosinstance";
+import { getUserCookie } from "@/lib/cookies";
 
 interface Item {
   id: string;
@@ -51,6 +52,14 @@ export default function ItemsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+   /// geting user info from cookie
+    const [userRole, setUserRole] = useState<string | null>(null); // State for user role
+    
+      // Get user role from cookie
+      useEffect(() => {
+        const userData = getUserCookie(); // Get the user data object
+        setUserRole(userData?.Role || null); // Access the Role property
+      }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -265,15 +274,20 @@ export default function ItemsPage() {
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditItem(item)}>
+            {userRole !== "Manager" &&(
+              <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditItem(item)}>
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteItem(item.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" title="View Details" onClick={() => handleEditItem(item)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+           
+
+            )}
+            {userRole !== "Manager" && (
+               <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteItem(item.id)}>
+               <Trash2 className="h-4 w-4" />
+             </Button>
+            )}
+            
+            
           </div>
         );
       },
@@ -288,7 +302,7 @@ export default function ItemsPage() {
           <Button onClick={handleNewItem}>
             <Plus className="mr-2 h-4 w-4" /> Add New Item
           </Button>
-          <FieldAdder onAddField={handleAddField} entityName="Items" />
+          {/* <FieldAdder onAddField={handleAddField} entityName="Items" /> */}
         </div>
       </div>
 

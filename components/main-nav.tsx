@@ -88,9 +88,9 @@ export function MainNav() {
       {mainNav.map((item) => {
        if (!userRole) return null;
        // Check if the item should be shown based on the user's role
-       if (item.showForRoles && !item.showForRoles.includes(userRole)) {
-         return null; // Skip rendering this item
-       }
+      //  if (item.showForRoles && !item.showForRoles.includes(userRole)) {
+      //    return null; // Skip rendering this item
+      //  }
 
       
 

@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AlertCircle, Camera, Check, Key, Mail, User } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Textarea } from "@/components/ui/textarea"
+import { getUserCookie } from "@/lib/cookies"
+
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -23,16 +25,38 @@ export default function ProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  /// geting user info from cookie
+  const [user, setUser] = useState<any | null>(null); // State for user object
+      
+        // Get user role from cookie
+        useEffect(() => {
+          const userData = getUserCookie(); // Get the user data object
+          setUser(userData); // Access the Role property
+        }, []);
+
   // Profile form state
   const [profileData, setProfileData] = useState({
-    name: "Admin User",
-    email: "admin@lwie.com",
-    bio: "Platform administrator with 5+ years of experience in digital marketplace management.",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    avatarUrl: "/placeholder.svg?height=128&width=128",
+    name: user ? `${user.Firstname} ${user.lastname}` : "Loading...",
+    email: user ? user.Email : "Loading...",
+    bio: user ? user.Bio || "" : "",
+    phone: user ? user.Phone || "" : "",
+    location: user ? user.Location || "" : "",
+    avatarUrl: user ? user.Image || "/placeholder.svg?height=128&width=128" : "/placeholder.svg?height=128&width=128",
   })
 
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: `${user.Firstname} ${user.lastname}`,
+        email: user.Email,
+        bio: user.Bio || "",
+        phone: user.Phone || "",
+        location: user.Location || "",
+        avatarUrl: user.Image || "/placeholder.svg?height=128&width=128",
+      });
+    }
+  }, [user]);
+  
   // Password form state
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -401,4 +425,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
