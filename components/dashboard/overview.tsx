@@ -40,8 +40,8 @@ type TimePeriod = "daily" | "weekly" | "monthly" | "annual"
 type DataType = "visitors" | "users" | "comparison"
 
 export function Overview() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly")
-  const [dataType, setDataType] = useState<DataType>("visitors")
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("daily")
+  const [dataType, setDataType] = useState<DataType>("comparison")
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
