@@ -67,7 +67,7 @@ export default function ItemsPage() {
     // Fetch items from the API
     const fetchItems = async () => {
       try {
-        const response = await axiosInstance.get('/api/items');
+        const response = await axiosInstance.get('/items');
         ////....
         if (response.data.success) {
           const data: Item[] = response.data.items.map((item: any) => ({
