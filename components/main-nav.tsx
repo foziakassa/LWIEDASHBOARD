@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Gift,
   Megaphone,
+  ArrowRightLeft,
+  FileText,
 } from "lucide-react";
 import { getUserCookie } from '../lib/cookies'; // Import getUserCookie
 
@@ -21,12 +23,12 @@ const mainNav = [
   {
     title: "Dashboard",
     href: "/admin",
-    icon: LayoutDashboard,
+    icon: FileText,
   },
   {
     title: "Items",
     href: "/admin/items",
-    icon: Package,
+    icon: ArrowRightLeft,
   },
   // {
   //   title: "Template",
@@ -39,6 +41,18 @@ const mainNav = [
     title: "Users",
     href: "/admin/users",
     icon: Users,
+  },
+    {
+    title: "post",
+    href: "/admin/post",
+    icon:  FileText, // Or Bullhorn
+
+  },
+    {
+    title: "swap",
+    href: "/admin/swap",
+    icon: ArrowRightLeft, // Or Bullhorn
+
   },
 
   {
@@ -53,7 +67,14 @@ const mainNav = [
     href: "/admin/advertisements/components/allad",
     icon: Megaphone, // Or Bullhorn
 
+  },
+   {
+    title: "Revenue",
+    href: "/admin/revenue",
+    icon: Megaphone, // Or Bullhorn
+
   }
+  
   
 
 ];

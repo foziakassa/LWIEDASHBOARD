@@ -68,9 +68,10 @@ export default function ItemsPage() {
     const fetchItems = async () => {
       try {
         const response = await axiosInstance.get('/items');
+        const datal = response.data
         ////....
-        if (response.data.success) {
-          const data: Item[] = response.data.items.map((item: any) => ({
+        if (datal.success) {
+          const data: Item[] = datal.items.map((item: any) => ({
             id: item.id,
             userId: item.user_id,
             title: item.title,
@@ -84,11 +85,11 @@ export default function ItemsPage() {
             tradeType: item.trade_type,
             acceptCash: item.accept_cash,
             categoryName: item.category_name,
-            images: item.images.map((image: any) => ({
-              id: image.id,
-              url: image.url,
-              isMain: image.is_main,
-            })),
+            // images: item.images.map((image: any) => ({
+            //   id: image.id,
+            //   url: image.url,
+            //   isMain: image.is_main,
+            // })),
           }));
 
           setItems(data);
